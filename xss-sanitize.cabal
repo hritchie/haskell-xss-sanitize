@@ -35,6 +35,13 @@ library
     other-modules:   Text.HTML.SanitizeXSS.Css
     ghc-options:     -Wall
 
+executable xss-sanitize
+  main-is:             Main.hs
+  hs-source-dirs:      src
+  build-depends:       base
+                     , xss-sanitize
+                     , text
+
 test-suite test
     type: exitcode-stdio-1.0
     main-is: test/main.hs

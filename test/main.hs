@@ -39,6 +39,14 @@ main = hspec $ do
     it "ucase image hack" $
       sanitized "<IMG src=javascript:alert('XSS') />" "<img />"
 
+    it "allows valid data attributes" $ do
+      let imgDataUri = "<img alt=\"1x1.gif\" src=\"data:image/gif;base64,R0lGODdhAgACAIAAAAAAAP///ywAAAAAAgACAAACAoRRADs=\" />"
+      sanitized imgDataUri imgDataUri
+
+    it "rejects invalid data attributes" $ do
+      let imgDataUri = "<img src=\"javascript:(function f() { alert(1) }).call('');\" />"
+      sanitized imgDataUri "<img />"
+
   describe "allowedCssAttributeValue" $ do
     it "allows hex" $ do
       assert $ allowedCssAttributeValue "#abc"

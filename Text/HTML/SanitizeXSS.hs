@@ -106,9 +106,18 @@ sanitizeAttribute attr | safeAttribute attr = Just attr
 sanitaryURI :: Text -> Bool
 sanitaryURI u =
   case parseURIReference (escapeURI $ T.unpack u) of
-     Just p  -> (null (uriScheme p)) ||
-                ((map toLower $ init $ uriScheme p) `member` safeURISchemes)
+     Just p  -> (schemeless p) ||
+                (safeScheme p) ||
+                (safeDataURI p)
      Nothing -> False
+  where
+    schemeless = null . uriScheme
+    safeScheme x = (map toLower $ init $ uriScheme x) `member` safeURISchemes
+    safeDataURI x = (isDataURI x) && (dataURIisSafe x)
+    isDataURI x = ((map toLower $ init $ uriScheme x) == "data")
+    dataURIisSafe x = member
+                        (T.pack (takeWhile (\y -> y /= ';') (uriPath x)))
+                        allowed_content_types
 
 
 -- | Escape unicode characters in a URI.  Characters that are
@@ -129,6 +138,10 @@ sanitaryAttributes = fromList (allowed_html_uri_attributes ++ acceptable_attribu
 
 allowed_html_uri_attributes :: [Text]
 allowed_html_uri_attributes = ["href", "src", "cite", "action", "longdesc"]
+
+allowed_content_types :: Set Text
+allowed_content_types = fromList ["image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "text/plain"]
+
 
 uri_attributes :: Set Text
 uri_attributes = fromList $ allowed_html_uri_attributes ++ ["xlink:href", "xml:base"]
