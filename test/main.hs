@@ -2,6 +2,8 @@
 import Text.HTML.SanitizeXSS
 import Text.HTML.SanitizeXSS.Css
 import Data.Text (Text)
+import qualified Data.Text as Text
+import Data.Char (isSpace)
 
 import Test.Hspec
 import Test.HUnit (assert, (@?=), Assertion)
@@ -13,6 +15,8 @@ test f actual expected = do
 
 sanitized :: Text -> Text -> Expectation
 sanitized = test sanitize
+
+sanitizedB :: Text -> Text -> Assertion
 sanitizedB = test sanitizeBalance
 
 main :: IO ()
@@ -85,6 +89,28 @@ main = hspec $ do
     it "allows valid units for grey-listed css" $ do
       let grey2Css = "<p style=\"background:1;border-foo:10px\"></p>"
       sanitized grey2Css grey2Css
+
+  describe "style tags" $ do
+    it "allows any non-url value for white-listed properties" $ do
+      let whiteCss = "<style> letter-spacing:foo-bar;text-align:10million </style>"
+      sanitized whiteCss (Text.filter (not . isSpace)  whiteCss)
+
+    it "rejects any url value" $ do
+      let whiteCss = "<style>letter-spacing:foo url();text-align:url(http://example.com)</style>"
+      sanitized whiteCss "<style>letter-spacing:foo </style>"
+
+    it "rejects properties not on the white list" $ do
+      let blackCss = "<style>anything:foo-bar;other-stuff:10million</style>"
+      sanitized blackCss "<style></style>"
+
+    it "rejects invalid units for grey-listed css" $ do
+      let greyCss = "<style>background:foo-bar;border:10million</style>"
+      sanitized greyCss  "<style></style>"
+
+    it "allows valid units for grey-listed css" $ do
+      let grey2Css = "<style>background:1;border-foo:10px</style>"
+      sanitized grey2Css grey2Css
+
 
   describe "balancing" $ do
     it "adds missing elements" $ do

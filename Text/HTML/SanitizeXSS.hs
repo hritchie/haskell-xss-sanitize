@@ -80,6 +80,9 @@ safeTags [] = []
 safeTags (t@(TagClose name):tags)
     | safeTagName name = t : safeTags tags
     | otherwise = safeTags tags
+safeTags (TagOpen "style" attributes:TagText t:tags) =
+  let css = sanitizeCSS t
+  in  (TagOpen "style" (catMaybes $ map sanitizeAttribute attributes): TagText css : safeTags tags)
 safeTags (TagOpen name attributes:tags)
   | safeTagName name = TagOpen name
       (catMaybes $ map sanitizeAttribute attributes) : safeTags tags
@@ -100,7 +103,7 @@ sanitizeAttribute ("style", value) =
     in  if T.null css then Nothing else Just ("style", css)
 sanitizeAttribute attr | safeAttribute attr = Just attr
                        | otherwise = Nothing
-         
+
 
 -- | Returns @True@ if the specified URI is not a potential security risk.
 sanitaryURI :: Text -> Bool
@@ -157,10 +160,10 @@ acceptable_elements = ["a", "abbr", "acronym", "address", "area",
     "kbd", "label", "legend", "li", "m", "main", "map", "menu", "meter", "multicol",
     "nav", "nextid", "ol", "output", "optgroup", "option", "p", "pre",
     "progress", "q", "s", "samp", "section", "select", "small", "sound",
-    "source", "spacer", "span", "strike", "strong", "sub", "sup", "table",
+    "source", "spacer", "span", "strike", "strong", "style", "sub", "sup", "table",
     "tbody", "td", "textarea", "time", "tfoot", "th", "thead", "tr", "tt",
     "u", "ul", "var", "video"]
-  
+
 mathml_elements :: [Text]
 mathml_elements = ["maction", "math", "merror", "mfrac", "mi",
     "mmultiscripts", "mn", "mo", "mover", "mpadded", "mphantom",
@@ -176,7 +179,7 @@ svg_elements = ["a", "animate", "animateColor", "animateMotion",
     "linearGradient", "line", "marker", "metadata", "missing-glyph",
     "mpath", "path", "polygon", "polyline", "radialGradient", "rect",
     "set", "stop", "svg", "switch", "text", "title", "tspan", "use"]
-  
+
 acceptable_attributes :: [Text]
 acceptable_attributes = ["abbr", "accept", "accept-charset", "accesskey",
     "align", "alt", "autocomplete", "autofocus", "axis",
