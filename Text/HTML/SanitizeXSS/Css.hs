@@ -1,9 +1,6 @@
-{-# LANGUAGE OverloadedStrings, CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Text.HTML.SanitizeXSS.Css (
   sanitizeCSS
-#ifdef TEST
-, allowedCssAttributeValue
-#endif
   ) where
 
 import Data.Text (Text)
