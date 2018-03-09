@@ -95,3 +95,10 @@ main = hspec $ do
       sanitizedB "<img></img>" "<img />"
     it "interleaved" $
       sanitizedB "<i>hello<b>world</i>" "<i>hello<b>world<i></i></b></i>"
+
+  describe "<script>" $ do
+    it "are not exposed as content" $ do
+      sanitizedB 
+          "<script>.style1 { font-family: \"Times New Roman\";}</script>"
+          "<script>.style1 { font-family: \"Times New Roman\";}</script>"
+      
