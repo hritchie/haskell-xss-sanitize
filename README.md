@@ -1,3 +1,9 @@
+# MackeyRMS changes
+
+This fork of this library does not sanitize `<script>` tags.
+
+
+
 # Summary
 
 xss-sanitize allows you to accept html from untrusted sources by first filtering it through a white list.
