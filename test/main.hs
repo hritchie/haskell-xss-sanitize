@@ -27,26 +27,24 @@ main = hspec $ do
       let testRelativeURI = "<a href=\"foo\">bar</a>"
       sanitized testRelativeURI testRelativeURI
 
-    -- DISABLED FOR MACKEY
-    -- The requirement is to allow script tags
-    -- it "protocol hack" $
-    --   sanitized "<style src=//ha.ckers.org/.j></style>" ""
+    it "protocol hack" $
+       sanitized "<script src=//ha.ckers.org/.j></script>" ""
 
     it "object hack" $
-      sanitized "<object classid=clsid:ae24fdae-03c6-11d1-8b76-0080c744f389><param name=url value=javastyle:alert('XSS')></object>" ""
+      sanitized "<object classid=clsid:ae24fdae-03c6-11d1-8b76-0080c744f389><param name=url value=javascript:alert('XSS')></object>" ""
 
     it "embed hack" $
       sanitized "<embed src=\"data:image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dH A6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv MjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hs aW5rIiB2ZXJzaW9uPSIxLjAiIHg9IjAiIHk9IjAiIHdpZHRoPSIxOTQiIGhlaWdodD0iMjAw IiBpZD0ieHNzIj48c2NyaXB0IHR5cGU9InRleHQvZWNtYXNjcmlwdCI+YWxlcnQoIlh TUyIpOzwvc2NyaXB0Pjwvc3ZnPg==\" type=\"image/svg+xml\" AllowScriptAccess=\"always\"></embed>" ""
 
     it "ucase image hack" $
-      sanitized "<IMG src=javastyle:alert('XSS') />" "<img />"
+      sanitized "<IMG src=javascript:alert('XSS') />" "<img />"
 
     it "allows valid data attributes" $ do
       let imgDataUri = "<img alt=\"1x1.gif\" src=\"data:image/gif;base64,R0lGODdhAgACAIAAAAAAAP///ywAAAAAAgACAAACAoRRADs=\" />"
       sanitized imgDataUri imgDataUri
 
     it "rejects invalid data attributes" $ do
-      let imgDataUri = "<img src=\"javastyle:(function f() { alert(1) }).call('');\" />"
+      let imgDataUri = "<img src=\"javascript:(function f() { alert(1) }).call('');\" />"
       sanitized imgDataUri "<img />"
 
   describe "allowedCssAttributeValue" $ do
