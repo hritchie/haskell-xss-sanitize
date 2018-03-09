@@ -2,7 +2,13 @@
 
 This fork of this library does not sanitize `<script>` tags.
 
+Also, the executable has been renamed to 
 
+    xss-sanitize-mackey
+
+instead of 
+
+    xss-sanitize
 
 # Summary
 
