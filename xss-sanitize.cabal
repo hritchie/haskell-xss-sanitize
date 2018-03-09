@@ -36,7 +36,7 @@ library
     other-modules:   Text.HTML.SanitizeXSS.Css
     ghc-options:     -Wall
 
-executable xss-sanitize
+executable xss-sanitize-mackey
   main-is:             Main.hs
   hs-source-dirs:      src
   default-language: Haskell2010
