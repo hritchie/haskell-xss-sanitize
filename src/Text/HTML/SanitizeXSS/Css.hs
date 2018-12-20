@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings, CPP #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Text.HTML.SanitizeXSS.Css (
   sanitizeCSS
 #ifdef TEST
@@ -6,17 +7,17 @@ module Text.HTML.SanitizeXSS.Css (
 #endif
   ) where
 
-import Data.Text (Text)
-import qualified Data.Text as T
-import Data.Attoparsec.Text
-import Data.Text.Lazy.Builder (toLazyText)
-import Data.Text.Lazy (toStrict)
-import Data.Set (member, fromList, Set)
-import Data.Char (isDigit)
-import Control.Applicative ((<|>), pure)
-import Text.CSS.Render (renderAttrs)
-import Text.CSS.Parse (parseAttrs)
-import Prelude hiding (takeWhile)
+import           Control.Applicative    (pure, (<|>))
+import           Data.Attoparsec.Text
+import           Data.Char              (isDigit)
+import           Data.Set               (Set, fromList, member)
+import           Data.Text              (Text)
+import qualified Data.Text              as T
+import           Data.Text.Lazy         (toStrict)
+import           Data.Text.Lazy.Builder (toLazyText)
+import           Prelude                hiding (takeWhile)
+import           Text.CSS.Parse         (parseAttrs)
+import           Text.CSS.Render        (renderAttrs)
 
 -- import FileLocation (debug, debugM)
 
@@ -33,7 +34,7 @@ sanitizeCSS css = toStrict . toLazyText .
         filterUrlAttribute :: (Text, Text) -> (Text, Text)
         filterUrlAttribute (prop,value) =
             case parseOnly rejectUrl value of
-              Left _ -> (prop,value)
+              Left _      -> (prop,value)
               Right noUrl -> filterUrlAttribute (prop, noUrl)
 
         rejectUrl = do
@@ -47,7 +48,7 @@ sanitizeCSS css = toStrict . toLazyText .
 
 
     parseAttributes = case parseAttrs css of
-      Left _ -> []
+      Left _   -> []
       Right as -> as
 
     isSanitaryAttr (_, "") = False
@@ -66,7 +67,7 @@ allowedCssAttributeValue :: Text -> Bool
 allowedCssAttributeValue val =
   val `member` allowed_css_keywords ||
     case parseOnly allowedCssAttributeParser val of
-        Left _ -> False
+        Left _  -> False
         Right b -> b
   where
     allowedCssAttributeParser = do

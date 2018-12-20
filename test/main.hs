@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Text.HTML.SanitizeXSS
-import Text.HTML.SanitizeXSS.Css
-import Data.Text (Text)
+import           Data.Text                 (Text)
+import           Text.HTML.SanitizeXSS
+import           Text.HTML.SanitizeXSS.Css
 
-import Test.Hspec
-import Test.HUnit (assert, (@?=), Assertion)
+import           Test.Hspec
+import           Test.HUnit                (Assertion, assert, (@?=))
 
 test :: (Text -> Text) -> Text -> Text -> Assertion
 test f actual expected = do
@@ -98,7 +98,7 @@ main = hspec $ do
 
   describe "<style>" $ do
     it "are not exposed as content" $ do
-      sanitizedB 
+      sanitizedB
           "<style>.style1 { font-family: \"Times New Roman\";}</style>"
           "<style>.style1 { font-family: &quot;Times New Roman&quot;;}</style>"
-      
+

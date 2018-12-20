@@ -8,6 +8,7 @@ module Text.HTML.SanitizeXSS
       sanitize
     , sanitizeBalance
     , sanitizeXSS
+    , getProblematicAttributes
 
     -- * Custom filtering
     , filterTags
@@ -20,20 +21,28 @@ module Text.HTML.SanitizeXSS
     , sanitaryURI
     ) where
 
-import Text.HTML.SanitizeXSS.Css
+import           Codec.Binary.UTF8.String  (encodeString)
+import           Data.Char                 (toLower)
+import           Data.Maybe                (catMaybes)
+import           Data.Set                  (Set, fromAscList, fromList, member,
+                                            notMember, toList, (\\))
+import           Data.Text                 (Text)
+import qualified Data.Text                 as T
+import           Network.URI               (URI (..), escapeURIString,
+                                            isAllowedInURI, parseURIReference,
+                                            uriScheme)
+import           Text.HTML.SanitizeXSS.Css
+import           Text.HTML.TagSoup
 
-import Text.HTML.TagSoup
-
-import Data.Set (Set(), member, notMember, (\\), fromList, fromAscList)
-import Data.Char ( toLower )
-import Data.Text (Text)
-import qualified Data.Text as T
-
-import Network.URI ( parseURIReference, URI (..),
-                     isAllowedInURI, escapeURIString, uriScheme )
-import Codec.Binary.UTF8.String ( encodeString )
-
-import Data.Maybe (catMaybes)
+-- | print potentially problematic attributes
+getProblematicAttributes :: Text -> [Tag Text]
+getProblematicAttributes txt =
+  let
+    allTags = fromList $ parseTags txt
+    goodTags = fromList . parseTags $ sanitize txt
+    filteredTags = allTags \\ goodTags
+  in
+    toList filteredTags
 
 
 -- | Sanitize HTML to prevent XSS attacks.  This is equivalent to @filterTags safeTags@.
@@ -100,7 +109,7 @@ sanitizeAttribute ("style", value) =
     in  if T.null css then Nothing else Just ("style", css)
 sanitizeAttribute attr | safeAttribute attr = Just attr
                        | otherwise = Nothing
-         
+
 
 -- | Returns @True@ if the specified URI is not a potential security risk.
 sanitaryURI :: Text -> Bool
@@ -162,7 +171,7 @@ acceptable_elements = ["a", "abbr", "acronym", "address", "area",
     "u", "ul", "var", "video"
     -- MACKEY for immersion HTML
     , "style"]
-  
+
 mathml_elements :: [Text]
 mathml_elements = ["maction", "math", "merror", "mfrac", "mi",
     "mmultiscripts", "mn", "mo", "mover", "mpadded", "mphantom",
@@ -178,7 +187,7 @@ svg_elements = ["a", "animate", "animateColor", "animateMotion",
     "linearGradient", "line", "marker", "metadata", "missing-glyph",
     "mpath", "path", "polygon", "polyline", "radialGradient", "rect",
     "set", "stop", "svg", "switch", "text", "title", "tspan", "use"]
-  
+
 acceptable_attributes :: [Text]
 acceptable_attributes = ["abbr", "accept", "accept-charset", "accesskey",
     "align", "alt", "autocomplete", "autofocus", "axis",

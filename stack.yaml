@@ -1,14 +1,17 @@
 # For more information, see: https://github.com/commercialhaskell/stack/blob/release/doc/yaml_configuration.md
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-8.16
+resolver: lts-11.22
 
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
-extra-deps: []
+extra-deps:
+  - datetime-0.3.1
+  - git: git@github.com:MackeyRMS/rms-mq.git
+    commit: 5321101f109732ad51c4672d66c3d61381a00065 # 10/09 wait for redis connection with retries
 
 # Override default flag values for local packages and extra-deps
 flags:
