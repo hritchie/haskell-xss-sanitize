@@ -15,9 +15,12 @@ import           PubSub
 
 main :: IO ()
 main = do
-  programMode <- _mode <$> execParser options
+  programMode <- execParser options
   case programMode of
-    Cmdln -> do
+    Filter -> do
+      input <- T.getContents
+      mapM_ (putStrLn . show) (getProblematicAttributes input)
+    Sanitize -> do
       input <- T.getContents
       putStrLn $ T.unpack $ sanitize input
     PubSub -> do

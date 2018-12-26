@@ -32,7 +32,7 @@ subscriptions pool =
   -- Sub sourceEx queue routingKey callback
   [ Sub newNotesChannel (filterContent pool)
   , Sub editedNotesChannel (filterContent pool)
-  -- , Sub commentsChannel filterContent) -- ?
+  -- , Sub commentsChannel (filterContent pool)
   ]
   where
     newNotesChannel = "notes.new"
@@ -73,6 +73,11 @@ noteFilter userId noteId = do
       noteJSON = responseBody ^?! _JSON
   let note = fromMaybe "Expected `notes`" $ noteJSON ^? key "notes" . nth 0
   return $ encode $ note ^? key "body"
+
+-- getCommentBody :: Int -> Int -> IO BL.ByteString
+-- getCommentBody noteId commentId = do
+--   return ""
+
 
 -- send admin email or something
 alertXSS :: [Tag Text] -> IO ()

@@ -212,7 +212,6 @@ services:
       MYSQL_HOST: mysql
       MYSQL_USERNAME: root
       MYSQL_DATABASE: mackey
-      
       MYSQL_SOCKET: ''
       REDIS_HOST: redis
   redis:
