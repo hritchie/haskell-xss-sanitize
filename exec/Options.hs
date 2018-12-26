@@ -1,31 +1,28 @@
 module Options where
 
-import           Data.Monoid         ((<>))
-import           Options.Applicative
 
-data ProgramMode = Sanitize | Filter | PubSub deriving Read
+import           Options.Applicative
+import           Protolude           hiding (option)
+
+data ProgramMode = Sanitize Text | Filter Text | PubSub deriving Read
 
 options :: ParserInfo ProgramMode
 options =
   let opts =
-        ( option auto
-            ( metavar "PubSub mode (default)"
-            <> short 'p'
+        ( pure PubSub <* switch
+            (  short 'p'
             <> long "pubsub"
-            <> help "Subscribe to event channels and filter note and comment bodies"
-            <> value PubSub)
-        <|> option auto
+            <> help "Subscribe to event channels and filter note and comment bodies" )
+        <|> Filter <$> option str
               ( metavar "Filter mode"
               <> short 'f'
               <> long "filter"
-              <> help "Print out problematic tags/attributes for given text"
-              <> value Filter)
-        <|> option auto
+              <> help "Print out problematic tags/attributes for given text")
+        <|> Sanitize <$> option str
               ( metavar "Program Mode: Sanitize"
               <> short 's'
               <> long "sanitize"
-              <> help "Filter and balance HTML text, and output result"
-              <> value Sanitize)
+              <> help "Filter and balance HTML text, and output result")
         <|> pure PubSub)
   in
     info

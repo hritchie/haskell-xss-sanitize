@@ -17,11 +17,9 @@ main :: IO ()
 main = do
   programMode <- execParser options
   case programMode of
-    Filter -> do
-      input <- T.getContents
+    Filter input -> do
       mapM_ (putStrLn . show) (getProblematicAttributes input)
-    Sanitize -> do
-      input <- T.getContents
+    Sanitize input -> do
       putStrLn $ T.unpack $ sanitize input
     PubSub -> do
       waitForConnection

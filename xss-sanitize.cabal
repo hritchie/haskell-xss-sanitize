@@ -63,6 +63,7 @@ executable xss-sanitize-mackey
   build-depends:       base
                      , xss-sanitize
                      , text
+                     , protolude
                      , optparse-applicative 
                      , rms-mq
 
