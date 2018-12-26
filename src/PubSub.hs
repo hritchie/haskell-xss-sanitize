@@ -20,6 +20,8 @@ import           Database.MySQL.Simple   (Connection)
 import qualified Network.Wreq            as W
 import           Text.HTML.TagSoup
 
+import           System.Log.FastLogger
+
 import           RMS.MQ.Messages.Events
 import           RMS.MQ.Types
 
@@ -49,8 +51,13 @@ filterContent pool msg = do
   mqNoteMessage <- either (die . toS) pure r
   let noteId = _mqeNoteId mqNoteMessage
   noteBody <- getNoteBody noteId
-  let attrs = getProblematicAttributes $ TL.toStrict . TL.decodeUtf8 $ noteBody
-  alertXSS attrs
+  let badAttrs = getProblematicAttributes $ TL.toStrict . TL.decodeUtf8 $ noteBody
+  if badAttrs == []
+  then return ()
+  else do
+    logMsg "NoteBody:"
+    logMsg $ toS noteBody
+    alertXSS badAttrs
 
 
 getNoteBody :: Int -> IO BL.ByteString
@@ -67,5 +74,19 @@ noteFilter userId noteId = do
   let note = fromMaybe "Expected `notes`" $ noteJSON ^? key "notes" . nth 0
   return $ encode $ note ^? key "body"
 
+-- send admin email or something
 alertXSS :: [Tag Text] -> IO ()
-alertXSS tags = hPutStr stderr $ (show tags :: ByteString)
+alertXSS tags = do
+  logMsg "XSS:"
+  mapM_ (logMsg . show) tags
+  logMsg ""
+
+
+logMsg :: Text -> IO ()
+logMsg msg = do
+  formattedTime <- newTimeCache simpleTimeFormat'
+  let attachTime t = "[" <> toLogStr t <> "] " <> toLogStr msg
+  (doLogging, cleanup) <- newTimedFastLogger formattedTime (LogStdout defaultBufSize)
+  doLogging attachTime
+  doLogging $ const "\n"
+  cleanup

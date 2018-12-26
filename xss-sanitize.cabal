@@ -35,6 +35,7 @@ library
                     , protolude
                     , resource-pool
                     , retry
+                    , fast-logger
                     , rms-mq
                     , tagsoup     
                     , text        
