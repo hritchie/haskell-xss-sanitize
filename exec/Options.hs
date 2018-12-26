@@ -12,14 +12,14 @@ options =
         ( pure PubSub <* switch
             (  short 'p'
             <> long "pubsub"
-            <> help "Subscribe to event channels and filter note and comment bodies" )
+            <> help "(default mode) Subscribe to event channels and filter note and comment bodies" )
         <|> Filter <$> option str
-              ( metavar "Filter mode"
+              ( metavar "(Filter mode)"
               <> short 'f'
               <> long "filter"
               <> help "Print out problematic tags/attributes for given text")
         <|> Sanitize <$> option str
-              ( metavar "Program Mode: Sanitize"
+              ( metavar "(Sanitize mode)"
               <> short 's'
               <> long "sanitize"
               <> help "Filter and balance HTML text, and output result")
