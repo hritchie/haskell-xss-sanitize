@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Text.HTML.SanitizeXSS
-import Text.HTML.SanitizeXSS.Css
-import Data.Text (Text)
+import           Data.Text                 (Text)
+import           Text.HTML.SanitizeXSS
+import           Text.HTML.SanitizeXSS.Css
 
-import Test.Hspec
-import Test.HUnit (assert, (@?=), Assertion)
+import           Test.Hspec
+import           Test.HUnit                (Assertion, assert, (@?=))
 
 test :: (Text -> Text) -> Text -> Text -> Assertion
 test f actual expected = do
@@ -28,7 +28,7 @@ main = hspec $ do
       sanitized testRelativeURI testRelativeURI
 
     it "protocol hack" $
-      sanitized "<script src=//ha.ckers.org/.j></script>" ""
+       sanitized "<script src=//ha.ckers.org/.j></script>" ""
 
     it "object hack" $
       sanitized "<object classid=clsid:ae24fdae-03c6-11d1-8b76-0080c744f389><param name=url value=javascript:alert('XSS')></object>" ""
@@ -95,3 +95,10 @@ main = hspec $ do
       sanitizedB "<img></img>" "<img />"
     it "interleaved" $
       sanitizedB "<i>hello<b>world</i>" "<i>hello<b>world<i></i></b></i>"
+
+  describe "<style>" $ do
+    it "are not exposed as content" $ do
+      sanitizedB
+          "<style>.style1 { font-family: \"Times New Roman\";}</style>"
+          "<style>.style1 { font-family: &quot;Times New Roman&quot;;}</style>"
+

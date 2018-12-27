@@ -1,5 +1,5 @@
 name:            xss-sanitize
-version:         0.3.5.6
+version:         0.3.5.7
 license:         BSD3
 license-file:    LICENSE
 author:          Greg Weber <greg@gregweber.info>
@@ -9,7 +9,7 @@ description:     run untrusted HTML through Text.HTML.SanitizeXSS.sanitizeXSS to
 
 category:        Web
 stability:       Stable
-cabal-version:   >= 1.8 
+cabal-version:   >= 1.10
 build-type:      Simple
 homepage:        http://github.com/yesodweb/haskell-xss-sanitize
 extra-source-files: README.md
@@ -19,33 +19,59 @@ flag network-uri
   default: True
 
 library
-    build-depends:    base == 4.*, containers
-                    , tagsoup     >= 0.12.2   && < 1
-                    , utf8-string >= 0.3      && < 1.1
-                    , css-text    >= 0.1.1    && < 0.2
-                    , text        >= 0.11     && < 2
-                    , attoparsec  >= 0.10.0.3 && < 1
-
+    hs-source-dirs:   src
+    build-depends:    base == 4.*
+                    , aeson
+                    , lens-aeson
+                    , attoparsec  
+                    , bytestring
+                    , containers
+                    , css-text    
+                    , exceptions
+                    , lens
+                    , mysql
+                    , mysql-simple
+                    , protolude
+                    , protolude
+                    , resource-pool
+                    , retry
+                    , fast-logger
+                    , rms-mq
+                    , tagsoup     
+                    , text        
+                    , time
+                    , utf8-string 
+                    , wreq
+                    
     if flag(network-uri)
       build-depends: network-uri >= 2.6
     else
       build-depends: network < 2.6
 
+    default-language: Haskell2010
     exposed-modules: Text.HTML.SanitizeXSS
-    other-modules:   Text.HTML.SanitizeXSS.Css
+                     Text.HTML.SanitizeXSS.Css
+                     PubSub
+                     DBConnect
     ghc-options:     -Wall
 
-executable xss-sanitize
+executable xss-sanitize-mackey
   main-is:             Main.hs
-  hs-source-dirs:      src
+  other-modules:       Options
+  hs-source-dirs:      exec
+  default-language: Haskell2010
   build-depends:       base
                      , xss-sanitize
                      , text
+                     , protolude
+                     , optparse-applicative 
+                     , rms-mq
 
 test-suite test
     type: exitcode-stdio-1.0
     main-is: test/main.hs
     cpp-options: -DTEST
+    default-language: Haskell2010
     build-depends:    base == 4.* , containers
                     , tagsoup     >= 0.12.2   && < 1
                     , utf8-string >= 0.3      && < 1.1
@@ -63,4 +89,4 @@ test-suite test
 
 source-repository head
   type:     git 
-  location: http://github.com/yesodweb/haskell-xss-sanitize.git
+  location: http://github.com/MackeyRMS/haskell-xss-sanitize.git

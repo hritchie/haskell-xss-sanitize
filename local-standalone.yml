@@ -1,0 +1,219 @@
+networks:
+  default: null
+version: '3.2'
+volumes:
+  mackey: null
+  custom-crud: null
+  tmp: null
+  mackey-custom: null
+  rmst-custom: null
+  dashboards-custom: null
+services:
+  colleagues:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/colleagues:v3
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_USERNAME: root
+      MYSQL_DATABASE: mackey
+      MYSQL_SOCKET: ''
+  sphinx:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/sphinx:v12
+    environment:
+      SQL_RANGE_STEP: '1000'
+      REDIS_HOST: redis
+    volumes:
+    - mackey:/app/config
+  search-suggestions:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/search-suggestions:v5
+    environment:
+      SPHINX_PORT: 9312
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      SPHINX_HOST: sphinx
+      MYSQL_USERNAME: root
+      MYSQL_DATABASE: mackey
+      MYSQL_SOCKET: ''
+  mysql:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/mysql:latest
+    environment:
+      MYSQL_DATABASE: mackey
+      MYSQL_ROOT_PASSWORD: root
+  authservice:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/authservice:v7
+    environment:
+      LOGIN_TYPE: default
+      EMIT_ANALYTICS: '1'
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      ENABLE_PASSWORD_RESET: '1'
+      MYSQL_USERNAME: root
+      COMPANY_SLUG: mackey
+      MYSQL_DATABASE: mackey
+      COMPANY_DOMAIN: localhost:8080
+      MYSQL_SOCKET: ''
+      REDIS_HOST: redis
+      EMAIL_SERVICE: http://mackey:3011/notifications
+      LOGIN_PATH: /login
+  mackey:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/rms_company_website_redesign:build_3800
+    environment:
+      CAPIQ_ACCOUNT: ''
+      RAILS_ENV: mackey
+      CONTACT_FULL_INDEX_CRON: ! '*/3 * * * *'
+      CAPIQ_PASSWORD: ''
+      OUTGOING_EMAIL_CRON: ! '* * * * *'
+      MYSQL_PASSWORD: root
+      NOTE_FULL_INDEX_CRON: 0 0 * * *
+      MYSQL_HOST: mysql
+      COMMENT_REPLIES: '1'
+      ATTACHMENT_FULL_INDEX_CRON: ! '*/5 * * * *'
+      SPHINX_HOST: sphinx
+      MYSQL_USERNAME: root
+      TAGCOUNT_FULL_INDEX_CRON: ! '*/5 * * * *'
+      BOX_INTEGRATION: ''
+      REPLIES_HOST_DOMAIN: replies.mackeyllc.com
+      SHOW_DOWNLOAD_LINKS_NEAR_TOP: '0'
+      MACKEY_SENDMAIL: dev
+      INCOMING_EMAIL_CRON: ! '# * * * * *'
+      DAILY_EMAIL_CRON: ! '# 2 18 * * 1-5'
+      COMPANY_SLUG: mackey
+      CUSTOMIZATION: default
+      MYSQL_DATABASE: mackey
+      ATTACHMENT_PREVIEWS_HOST: http://attachment-previews:4444
+      COMPANY_DOMAIN: localhost:8080
+      MYSQL_SOCKET: ''
+      CRONTAB_GENERAL_EXTENSIONS: ! "5 1 * * * . /home/mackey/.bashrc ; sudo logrotate
+        -f /etc/logrotate.d/rails\n* * * * * . /home/mackey/.bashrc ; (cd /home/mackey/emailproc
+        && ./process-email mackey /home/mackey/mackey/mail >> log/mackey.log 2>&1)
+        \n"
+      TAGS_SERVICE: http://tags-service
+      ATTACHMENT_PREVIEWS_CALLBACK_HOST: http://mackey:3000
+      REDIS_HOST: redis
+      VENDOR_FULL_INDEX_CRON: ! '*/3 * * * *'
+    volumes:
+    - mackey-custom:/home/mackey/mackey/custom
+    - dashboards-custom:/home/mackey/custom-dashboards
+    - rmst-custom:/home/mackey/rmst
+    - mackey:/app/config
+    - tmp:/tmp
+  custom:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/custom:build_165
+    environment:
+      CUSTOMIZATION: default
+    volumes:
+    - mackey-custom:/home/mackey/mackey/custom
+    - dashboards-custom:/home/mackey/custom-dashboards
+    - rmst-custom:/home/mackey/rmst
+    - custom-crud:/home/mackey/custom-crud-config
+  nginx:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/nginx:v25
+    environment:
+      LOGIN_TYPE: default
+      CUSTOM_CRUD_BASE_PATH: /custom-api
+      LISTEN_PORT: 8080
+      ENABLE_NEW_VENDORS: ''
+      ENABLE_NGINX_DASHBOARD: ''
+      ENABLE_NGINX_NOTE_TYPE_FIELDS: ''
+      BOX_INTEGRATION: ''
+      COMPANY_SLUG: mackey
+      CUSTOMIZATION: default
+      CUSTOM_CRUD_INTEGRATION: '1'
+      COMPANY_DOMAIN: localhost:8080
+      NGINX_EXTRA_PROXIES: ''
+      LOGIN_PATH: /login
+    ports:
+    - 8080:8080
+  custom-crud:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/custom-crud:v1
+    environment:
+      CUSTOM_CRUD_BASE_PATH: /custom-api
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_USERNAME: root
+      CUSTOMIZATION: default
+      MYSQL_DATABASE: mackey
+      MYSQL_SOCKET: ''
+      PORT: 3000
+    volumes:
+    - custom-crud:/app/config
+  tags-service:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/tags-service:v10
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_USERNAME: root
+      MYSQL_DATABASE: mackey
+      MYSQL_SOCKET: ''
+  replies:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/replies:v3
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_USERNAME: root
+      COMPANY_SLUG: mackey
+      MYSQL_DATABASE: mackey
+      MYSQL_SOCKET: ''
+      DEDICATED_REPLIES_CALLBACK_HOST: http://mackey:3021
+  rms-analytics:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/rms-analytics:v2
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_USERNAME: root
+      MYSQL_DATABASE: mackey
+      MYSQL_SOCKET: ''
+      REDIS_HOST: redis
+    depends_on:
+    - redis
+  pdf-web:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/pdf-web:v1
+    environment:
+      PDF_PRINT_LOCAL_PREFIX: http://localhost:8080
+    volumes:
+    - tmp:/tmp
+  piwik-logger:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/piwik-logger:v3
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_USERNAME: root
+      MYSQL_DATABASE: mackey
+      MYSQL_SOCKET: ''
+      LOGGER_TYPE: default
+      REDIS_HOST: redis
+  tearsheet-service:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/tearsheet-service:v1
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      NOTE_FILTER_URL: http://mackey:3000/note_filter
+      MYSQL_USERNAME: root
+      TEMPLATE_URL: http://mackey:3000/note_types/tearsheet_templates
+      CUSTOMIZATION: default
+      MYSQL_DATABASE: mackey
+      MYSQL_SOCKET: ''
+  attachment-previews:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/attachment-previews:v1
+  contacts:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/contacts:v1
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      SPHINX_HOST: sphinx
+      MYSQL_USERNAME: root
+      MYSQL_DATABASE: mackey
+      MYSQL_SOCKET: ''
+      REDIS_HOST: redis
+  xss-sanitize:
+    image: 019208955384.dkr.ecr.us-east-1.amazonaws.com/xss-sanitize:ag-dev
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_USERNAME: root
+      MYSQL_DATABASE: mackey
+      MYSQL_SOCKET: ''
+      REDIS_HOST: redis
+  redis:
+    image: redis:4.0.11
+
