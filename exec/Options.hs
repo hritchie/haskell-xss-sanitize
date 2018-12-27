@@ -4,7 +4,7 @@ module Options where
 import           Options.Applicative
 import           Protolude           hiding (option)
 
-data ProgramMode = Sanitize Text | Filter Text | PubSub deriving Read
+data ProgramMode = Sanitize Text | Filter Text | PubSub | QuickScan deriving Read
 
 options :: ParserInfo ProgramMode
 options =
@@ -12,17 +12,21 @@ options =
         ( pure PubSub <* switch
             (  short 'p'
             <> long "pubsub"
-            <> help "(default mode) Subscribe to event channels and filter note and comment bodies" )
+            <> help "Subscribe to event channels and filter note and comment bodies (default mode)" )
         <|> Filter <$> option str
-              ( metavar "(Filter mode)"
+              ( metavar "HTML"
               <> short 'f'
               <> long "filter"
-              <> help "Print out problematic tags/attributes for given text")
+              <> help "Print out problematic tags/attributes for given HTML text")
         <|> Sanitize <$> option str
-              ( metavar "(Sanitize mode)"
+              ( metavar "HTML"
               <> short 's'
               <> long "sanitize"
               <> help "Filter and balance HTML text, and output result")
+        <|> pure QuickScan <* switch
+              (  short 'q'
+              <> long "quick-scan"
+              <> help "Read HTML text on stdin, report result via exit code (0 ==> clean)")
         <|> pure PubSub)
   in
     info
