@@ -49,10 +49,10 @@ library
       build-depends: network < 2.6
 
     default-language: Haskell2010
-    exposed-modules: Text.HTML.SanitizeXSS
-                     Text.HTML.SanitizeXSS.Css
-                     PubSub
-                     DBConnect
+    exposed-modules:   Text.HTML.SanitizeXSS
+                     , Text.HTML.SanitizeXSS.Css
+                     , PubSub
+                     , DBConnect
     ghc-options:     -Wall
 
 executable xss-sanitize-mackey
@@ -73,6 +73,7 @@ test-suite test
     cpp-options: -DTEST
     default-language: Haskell2010
     build-depends:    base == 4.* , containers
+                    , xss-sanitize
                     , tagsoup     >= 0.12.2   && < 1
                     , utf8-string >= 0.3      && < 1.1
                     , css-text    >= 0.1.1    && < 0.2

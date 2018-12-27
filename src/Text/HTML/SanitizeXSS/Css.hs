@@ -2,9 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Text.HTML.SanitizeXSS.Css (
   sanitizeCSS
-#ifdef TEST
+-- #ifdef TEST
 , allowedCssAttributeValue
-#endif
+-- #endif
   ) where
 
 import           Control.Applicative    (pure, (<|>))
