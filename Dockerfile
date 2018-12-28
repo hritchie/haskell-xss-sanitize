@@ -22,6 +22,7 @@ ENV LC_ALL en_US.UTF-8
 RUN mkdir -p /app/bin
 WORKDIR /app
 
+COPY bin/* /app/bin/
 COPY dockerbin/* /app/bin/
 ENV PATH=$PATH:/app/bin
 
