@@ -39,7 +39,13 @@ import           Text.HTML.TagSoup
 
 
 
-type WriterTagFilter w = [Tag Text] -> Writer w [Tag Text]
+-- Use to report errors
+data XssFlag = XssFlag Text -- to develop
+
+type XssWriter = Writer [XssFlag]
+
+type XssTagFilter = [Tag Text] -> XssWriter [Tag Text]
+
 
 -- | print potentially problematic attributes
 getProblematicAttributes :: Text -> [Tag Text]
@@ -60,22 +66,21 @@ sanitize = sanitizeXSS
 -- | alias of sanitize function
 sanitizeXSS :: Text -> Text
 sanitizeXSS input = 
-    let r :: (Text, [[String]])
-        r = runWriter . filterTags safeTags $ input
+    let r = runWriter . filterTags safeTags $ input
     in fst r
 
 -- | Sanitize HTML to prevent XSS attacks and also make sure the tags are balanced.
 --   This is equivalent to @filterTags (balanceTags . safeTags)@.
-sanitizeBalance :: Monoid w => Text -> Writer w Text
+sanitizeBalance :: Text -> XssWriter Text
 sanitizeBalance = filterTags (balanceTags <=< safeTags)
 
 -- | Filter which makes sure the tags are balanced.  Use with 'filterTags' and 'safeTags' to create a custom filter.
-balanceTags :: Monoid w => WriterTagFilter w
+balanceTags :: XssTagFilter
 balanceTags = balance []
 
 -- | Parse the given text to a list of tags, apply the given filtering function, and render back to HTML.
 --   You can insert your own custom filtering but make sure you compose your filtering function with 'safeTags'!
-filterTags :: Monoid w => WriterTagFilter w -> Text -> Writer w Text
+filterTags :: XssTagFilter -> Text -> XssWriter Text
 filterTags f input = do
     tags <- f . canonicalizeTags . parseTags $ input
     return $ renderTagsOptions renderOptions {
@@ -85,9 +90,8 @@ filterTags f input = do
 voidElems :: Set T.Text
 voidElems = fromAscList $ T.words $ T.pack "area base br col command embed hr img input keygen link meta param source track wbr"
 
-balance :: Monoid w 
-        => [Text] -- ^ unclosed tags
-        -> WriterTagFilter w
+balance :: [Text] -- ^ unclosed tags
+        -> XssTagFilter
 balance unclosed [] = pure $ map TagClose $ filter (`notMember` voidElems) unclosed
 balance (x:xs) tags'@(TagClose name:tags)
     | x == name = (TagClose name :) <$>  balance xs tags
@@ -100,15 +104,17 @@ balance unclosed (TagOpen name as : tags) =
 balance unclosed (t:ts) = (t :) <$> balance unclosed ts
 
 -- | Filters out any usafe tags and attributes. Use with filterTags to create a custom filter.
-safeTags :: Monoid w => WriterTagFilter w
+safeTags :: XssTagFilter
 safeTags [] = pure []
 safeTags (t@(TagClose name):tags)
     | safeTagName name = (t:) <$> safeTags tags
-    | otherwise = safeTags tags
+    | otherwise = do
+          tell [XssFlag $ "unsafe tag:" <> name]
+          safeTags tags
 safeTags (TagOpen name attributes:tags)
-  | safeTagName name = 
-        (TagOpen name (catMaybes $ map sanitizeAttribute attributes) :)
-        <$> safeTags tags
+  | safeTagName name = do
+        let t = TagOpen name (catMaybes $ map sanitizeAttribute attributes)
+        (t :) <$> safeTags tags
   | otherwise = safeTags tags
 safeTags (t:tags) = (t:) <$> safeTags tags
 
