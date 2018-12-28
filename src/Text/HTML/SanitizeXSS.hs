@@ -72,8 +72,8 @@ sanitizeXSS input =
 
 -- | Sanitize HTML to prevent XSS attacks and also make sure the tags are balanced.
 --   This is equivalent to @filterTags (balanceTags . safeTags)@.
-sanitizeBalance :: Text -> XssWriter Text
-sanitizeBalance = filterTags (balanceTags <=< safeTags)
+sanitizeBalance :: Text -> Text
+sanitizeBalance = fst . runWriter . filterTags (balanceTags <=< safeTags)
 
 -- | Filter which makes sure the tags are balanced.  Use with 'filterTags' and 'safeTags' to create a custom filter.
 balanceTags :: XssTagFilter
@@ -140,6 +140,7 @@ sanitizeAttribute attr = do
 
 safeAttribute :: (Text, Text) -> XssWriter Bool
 safeAttribute (name, value) = 
+    -- TODO start writing flags here
     pure $ name `member` sanitaryAttributes && (name `notMember` uri_attributes || sanitaryURI value)
 
 -- | Returns @True@ if the specified URI is not a potential security risk.
