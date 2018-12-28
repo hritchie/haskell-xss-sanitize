@@ -7,6 +7,9 @@ module Text.HTML.SanitizeXSS.Css (
 -- #endif
   ) where
 
+import           Control.Monad
+import           Control.Monad.Writer (tell)
+import           Data.Monoid ((<>))
 import           Control.Applicative    (pure, (<|>))
 import           Data.Attoparsec.Text
 import           Data.Char              (isDigit)
@@ -27,16 +30,17 @@ import Text.HTML.SanitizeXSS.Types
 --   sanitizer.py filters out url(), but this is redundant
 
 sanitizeCSS :: Text -> XssWriter Text
-sanitizeCSS css = pure . toStrict . toLazyText .
-    renderAttrs . filter isSanitaryAttr . filterUrl $ parseAttributes
+sanitizeCSS css = do
+    as <- filterM isSanitaryAttr =<< filterUrl =<< parseAttributes css
+    pure . toStrict . toLazyText .  renderAttrs $ as 
   where
-    filterUrl :: [(Text,Text)] -> [(Text,Text)]
-    filterUrl = map filterUrlAttribute
+    filterUrl :: [(Text,Text)] -> XssWriter [(Text,Text)]
+    filterUrl = mapM filterUrlAttribute
       where
-        filterUrlAttribute :: (Text, Text) -> (Text, Text)
+        filterUrlAttribute :: (Text, Text) -> XssWriter (Text, Text)
         filterUrlAttribute (prop,value) =
             case parseOnly rejectUrl value of
-              Left _      -> (prop,value)
+              Left _      -> pure (prop,value)
               Right noUrl -> filterUrlAttribute (prop, noUrl)
 
         rejectUrl = do
@@ -49,18 +53,23 @@ sanitizeCSS css = pure . toStrict . toLazyText .
           return $ T.append (T.pack pre) rest
 
 
-    parseAttributes = case parseAttrs css of
-      Left _   -> []
-      Right as -> as
+    parseAttributes :: Text -> XssWriter [(Text, Text)]
+    parseAttributes css' = case parseAttrs css' of
+      Left err   -> do
+          tell [XssFlag $ "css parse error: " <> (T.pack . show $ err)]
+          pure []
+      Right as -> pure as
 
-    isSanitaryAttr (_, "") = False
-    isSanitaryAttr ("",_)  = False
+    -- TODO
+    isSanitaryAttr :: (Text, Text) -> XssWriter Bool
+    isSanitaryAttr (_, "") = pure False
+    isSanitaryAttr ("",_)  = pure False
     isSanitaryAttr (prop, value)
-      | prop `member` allowed_css_properties = True
+      | prop `member` allowed_css_properties = pure True
       | (T.takeWhile (/= '-') prop) `member` allowed_css_unit_properties &&
-          all allowedCssAttributeValue (T.words value) = True
-      | prop `member` allowed_svg_properties = True
-      | otherwise = False
+          all allowedCssAttributeValue (T.words value) = pure True
+      | prop `member` allowed_svg_properties = pure True
+      | otherwise = pure False
 
     allowed_css_unit_properties :: Set Text
     allowed_css_unit_properties = fromList ["background","border","margin","padding"]
