@@ -66,7 +66,7 @@ sanitizeBalance :: Monad a => Text -> a Text
 sanitizeBalance = filterTags (balanceTags <=< safeTags)
 
 -- | Filter which makes sure the tags are balanced.  Use with 'filterTags' and 'safeTags' to create a custom filter.
-balanceTags :: Monad a => [Tag Text] -> a [Tag Text]
+balanceTags :: Monad a => MonadicTagFilter a
 balanceTags = balance []
 
 -- | Parse the given text to a list of tags, apply the given filtering function, and render back to HTML.
@@ -83,8 +83,7 @@ voidElems = fromAscList $ T.words $ T.pack "area base br col command embed hr im
 
 balance :: Monad a 
         => [Text] -- ^ unclosed tags
-        -> [Tag Text] 
-        -> a [Tag Text]
+        -> MonadicTagFilter a
 balance unclosed [] = pure $ map TagClose $ filter (`notMember` voidElems) unclosed
 balance (x:xs) tags'@(TagClose name:tags)
     | x == name = (TagClose name :) <$>  balance xs tags
@@ -97,7 +96,7 @@ balance unclosed (TagOpen name as : tags) =
 balance unclosed (t:ts) = (t :) <$> balance unclosed ts
 
 -- | Filters out any usafe tags and attributes. Use with filterTags to create a custom filter.
-safeTags :: Monad a => [Tag Text] -> a [Tag Text]
+safeTags :: Monad a => MonadicTagFilter a
 safeTags [] = pure []
 safeTags (t@(TagClose name):tags)
     | safeTagName name = (t:) <$> safeTags tags
