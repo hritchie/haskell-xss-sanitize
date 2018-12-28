@@ -22,6 +22,8 @@ module Text.HTML.SanitizeXSS
     ) where
 
 import           Codec.Binary.UTF8.String  (encodeString)
+import Control.Monad
+import Control.Monad.Identity
 import           Data.Char                 (toLower)
 import           Data.Maybe                (catMaybes)
 import           Data.Set                  (Set, fromAscList, fromList, member,
@@ -33,6 +35,10 @@ import           Network.URI               (URI (..), escapeURIString,
                                             uriScheme)
 import           Text.HTML.SanitizeXSS.Css
 import           Text.HTML.TagSoup
+
+
+
+type MonadicTagFilter a = [Tag Text] -> a [Tag Text]
 
 -- | print potentially problematic attributes
 getProblematicAttributes :: Text -> [Tag Text]
@@ -52,49 +58,56 @@ sanitize = sanitizeXSS
 
 -- | alias of sanitize function
 sanitizeXSS :: Text -> Text
-sanitizeXSS = filterTags safeTags
+sanitizeXSS = runIdentity . filterTags safeTags
 
 -- | Sanitize HTML to prevent XSS attacks and also make sure the tags are balanced.
 --   This is equivalent to @filterTags (balanceTags . safeTags)@.
-sanitizeBalance :: Text -> Text
-sanitizeBalance = filterTags (balanceTags . safeTags)
+sanitizeBalance :: Monad a => Text -> a Text
+sanitizeBalance = filterTags (balanceTags <=< safeTags)
 
 -- | Filter which makes sure the tags are balanced.  Use with 'filterTags' and 'safeTags' to create a custom filter.
-balanceTags :: [Tag Text] -> [Tag Text]
+balanceTags :: Monad a => [Tag Text] -> a [Tag Text]
 balanceTags = balance []
 
 -- | Parse the given text to a list of tags, apply the given filtering function, and render back to HTML.
 --   You can insert your own custom filtering but make sure you compose your filtering function with 'safeTags'!
-filterTags :: ([Tag Text] -> [Tag Text]) -> Text -> Text
-filterTags f = renderTagsOptions renderOptions {
-    optMinimize = \x -> x `member` voidElems -- <img><img> converts to <img />, <a/> converts to <a></a>
-  } .  f . canonicalizeTags . parseTags
+filterTags :: Monad a => MonadicTagFilter a -> Text -> a Text
+filterTags f input = do
+    tags <- f . canonicalizeTags . parseTags $ input
+    return $ renderTagsOptions renderOptions {
+        optMinimize = \x -> x `member` voidElems -- <img><img> converts to <img />, <a/> converts to <a></a>
+      } tags
 
 voidElems :: Set T.Text
 voidElems = fromAscList $ T.words $ T.pack "area base br col command embed hr img input keygen link meta param source track wbr"
 
-balance :: [Text] -- ^ unclosed tags
-        -> [Tag Text] -> [Tag Text]
-balance unclosed [] = map TagClose $ filter (`notMember` voidElems) unclosed
+balance :: Monad a 
+        => [Text] -- ^ unclosed tags
+        -> [Tag Text] 
+        -> a [Tag Text]
+balance unclosed [] = pure $ map TagClose $ filter (`notMember` voidElems) unclosed
 balance (x:xs) tags'@(TagClose name:tags)
-    | x == name = TagClose name : balance xs tags
+    | x == name = (TagClose name :) <$>  balance xs tags
     | x `member` voidElems = balance xs tags'
-    | otherwise = TagOpen name [] : TagClose name : balance (x:xs) tags
+    | otherwise = do
+        ys <- balance (x:xs) tags
+        pure $ TagOpen name [] : TagClose name : ys
 balance unclosed (TagOpen name as : tags) =
-    TagOpen name as : balance (name : unclosed) tags
-balance unclosed (t:ts) = t : balance unclosed ts
+    (TagOpen name as :) <$> balance (name : unclosed) tags
+balance unclosed (t:ts) = (t :) <$> balance unclosed ts
 
 -- | Filters out any usafe tags and attributes. Use with filterTags to create a custom filter.
-safeTags :: [Tag Text] -> [Tag Text]
-safeTags [] = []
+safeTags :: Monad a => [Tag Text] -> a [Tag Text]
+safeTags [] = pure []
 safeTags (t@(TagClose name):tags)
-    | safeTagName name = t : safeTags tags
+    | safeTagName name = (t:) <$> safeTags tags
     | otherwise = safeTags tags
 safeTags (TagOpen name attributes:tags)
-  | safeTagName name = TagOpen name
-      (catMaybes $ map sanitizeAttribute attributes) : safeTags tags
+  | safeTagName name = 
+        (TagOpen name (catMaybes $ map sanitizeAttribute attributes) :)
+        <$> safeTags tags
   | otherwise = safeTags tags
-safeTags (t:tags) = t:safeTags tags
+safeTags (t:tags) = (t:) <$> safeTags tags
 
 safeTagName :: Text -> Bool
 safeTagName tagname = tagname `member` sanitaryTags

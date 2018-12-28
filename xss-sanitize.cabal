@@ -29,6 +29,7 @@ library
                     , css-text    
                     , exceptions
                     , lens
+                    , mtl
                     , mysql
                     , mysql-simple
                     , protolude
