@@ -38,7 +38,8 @@ import           Text.HTML.TagSoup
 getProblematicAttributes :: Text -> [Tag Text]
 getProblematicAttributes txt =
   let
-    allTags = fromList $ parseTags txt
+    -- we must canonicalize case
+    allTags = fromList $ canonicalizeTags . parseTags $ txt
     goodTags = fromList . parseTags $ sanitize txt
     filteredTags = allTags \\ goodTags
   in
