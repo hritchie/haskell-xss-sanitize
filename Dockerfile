@@ -26,4 +26,4 @@ COPY bin/* /app/bin/
 COPY dockerbin/* /app/bin/
 ENV PATH=$PATH:/app/bin
 
-CMD ["xss-sanitize-mackey"]
+CMD ["xss", "pubsub"]

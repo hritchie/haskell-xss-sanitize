@@ -18,17 +18,18 @@ main :: IO ()
 main = do
   programMode <- execParser options
   case programMode of
-    Filter input -> do
-      mapM_ (putStrLn . show) (getProblematicAttributes input)
-    Sanitize input -> do
-      putStrLn $ T.unpack $ sanitize input
-    QuickScan -> do
+    Filter quickScan -> do
       input <- T.getContents
       case getProblematicAttributes input of
         [] -> exitSuccess
         xs -> do
-          -- mapM_ (putStrLn . show) xs
-          exitWith (ExitFailure 1)
+          if quickScan
+          then exitWith (ExitFailure 1)
+          else mapM_ (putStrLn . show) xs
+
+    Sanitize -> do
+      input <- T.getContents
+      putStrLn $ T.unpack $ sanitize input
     PubSub -> do
       waitForConnection
       pool <- getConnPool

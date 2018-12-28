@@ -55,7 +55,7 @@ library
                      , DBConnect
     ghc-options:     -Wall
 
-executable xss-sanitize-mackey
+executable xss
   main-is:             Main.hs
   other-modules:       Options
   hs-source-dirs:      exec
