@@ -20,7 +20,7 @@ main = do
   case programMode of
     Filter quickScan -> do
       input <- T.getContents
-      case getProblematicAttributes input of
+      case flagXss input of
         [] -> exitSuccess
         xs -> do
           if quickScan

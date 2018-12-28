@@ -10,6 +10,7 @@ module Text.HTML.SanitizeXSS
     , sanitizeBalance
     , sanitizeXSS
     , getProblematicAttributes
+    , flagXss -- newer version of above
 
     -- * Custom filtering
     , filterTags
@@ -50,6 +51,10 @@ getProblematicAttributes txt =
     filteredTags = allTags \\ goodTags
   in
     toList filteredTags
+
+
+flagXss :: Text -> [XssFlag]
+flagXss = snd . runWriter . filterTags safeTags 
 
 
 -- | Sanitize HTML to prevent XSS attacks.  This is equivalent to @filterTags safeTags@.

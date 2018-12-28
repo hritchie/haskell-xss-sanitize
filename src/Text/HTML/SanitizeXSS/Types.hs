@@ -6,6 +6,7 @@ import           Text.HTML.TagSoup
 
 -- Use to report errors
 data XssFlag = XssFlag Text -- to develop
+  deriving (Show, Eq)
 
 -- TODO change to Seq or something more performant
 type XssWriter = Writer [XssFlag]
