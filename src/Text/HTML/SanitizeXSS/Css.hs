@@ -60,16 +60,17 @@ sanitizeCSS css = do
           pure []
       Right as -> pure as
 
-    -- TODO
     isSanitaryAttr :: (Text, Text) -> XssWriter Bool
     isSanitaryAttr (_, "") = pure False
     isSanitaryAttr ("",_)  = pure False
-    isSanitaryAttr (prop, value)
+    isSanitaryAttr x@(prop, value)
       | prop `member` allowed_css_properties = pure True
       | (T.takeWhile (/= '-') prop) `member` allowed_css_unit_properties &&
           all allowedCssAttributeValue (T.words value) = pure True
       | prop `member` allowed_svg_properties = pure True
-      | otherwise = pure False
+      | otherwise = do
+            tell [XssFlag $ "unsanitary css attribute: " <> (T.pack . show $ x)]
+            pure False
 
     allowed_css_unit_properties :: Set Text
     allowed_css_unit_properties = fromList ["background","border","margin","padding"]
