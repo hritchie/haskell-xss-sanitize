@@ -114,7 +114,8 @@ safeTags (t@(TagClose name):tags)
           safeTags tags
 safeTags (TagOpen name attributes:tags)
   | safeTagName name = do
-        let t = TagOpen name (catMaybes $ map sanitizeAttribute attributes)
+        as <- mapM sanitizeAttribute attributes
+        let t = TagOpen name (catMaybes as)
         (t :) <$> safeTags tags
   | otherwise = safeTags tags
 safeTags (t:tags) = (t:) <$> safeTags tags
@@ -122,18 +123,24 @@ safeTags (t:tags) = (t:) <$> safeTags tags
 safeTagName :: Text -> Bool
 safeTagName tagname = tagname `member` sanitaryTags
 
-safeAttribute :: (Text, Text) -> Bool
-safeAttribute (name, value) = name `member` sanitaryAttributes &&
-  (name `notMember` uri_attributes || sanitaryURI value)
-
 -- | low-level API if you have your own HTML parser. Used by safeTags.
-sanitizeAttribute :: (Text, Text) -> Maybe (Text, Text)
+sanitizeAttribute :: (Text, Text) -> XssWriter (Maybe (Text, Text))
 sanitizeAttribute ("style", value) =
     let css = sanitizeCSS value
-    in  if T.null css then Nothing else Just ("style", css)
-sanitizeAttribute attr | safeAttribute attr = Just attr
-                       | otherwise = Nothing
+    in  
+        pure $ if T.null css then Nothing else Just ("style", css)
+sanitizeAttribute attr = do
+    safe <- safeAttribute attr 
+    if safe 
+    then pure (Just attr)
+    else do
+        tell [XssFlag $ "Unsafe attribute: " <> (T.pack . show $ attr)]
+        pure Nothing
 
+
+safeAttribute :: (Text, Text) -> XssWriter Bool
+safeAttribute (name, value) = 
+    pure $ name `member` sanitaryAttributes && (name `notMember` uri_attributes || sanitaryURI value)
 
 -- | Returns @True@ if the specified URI is not a potential security risk.
 sanitaryURI :: Text -> Bool
