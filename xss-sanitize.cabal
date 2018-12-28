@@ -51,6 +51,7 @@ library
 
     default-language: Haskell2010
     exposed-modules:   Text.HTML.SanitizeXSS
+                     , Text.HTML.SanitizeXSS.Types
                      , Text.HTML.SanitizeXSS.Css
                      , PubSub
                      , DBConnect

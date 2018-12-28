@@ -34,18 +34,10 @@ import qualified Data.Text                 as T
 import           Network.URI               (URI (..), escapeURIString,
                                             isAllowedInURI, parseURIReference,
                                             uriScheme)
+import           Text.HTML.SanitizeXSS.Types
 import           Text.HTML.SanitizeXSS.Css
 import           Text.HTML.TagSoup
 
-
-
--- Use to report errors
-data XssFlag = XssFlag Text -- to develop
-
--- TODO change to Seq or something more performant
-type XssWriter = Writer [XssFlag]
-
-type XssTagFilter = [Tag Text] -> XssWriter [Tag Text]
 
 
 -- | print potentially problematic attributes
