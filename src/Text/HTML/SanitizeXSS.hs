@@ -117,10 +117,9 @@ safeTagName tagname = tagname `member` sanitaryTags
 
 -- | low-level API if you have your own HTML parser. Used by safeTags.
 sanitizeAttribute :: (Text, Text) -> XssWriter (Maybe (Text, Text))
-sanitizeAttribute ("style", value) =
-    let css = sanitizeCSS value
-    in  
-        pure $ if T.null css then Nothing else Just ("style", css)
+sanitizeAttribute ("style", value) = do
+    css <- sanitizeCSS value
+    pure $ if T.null css then Nothing else Just ("style", css)
 sanitizeAttribute attr = do
     safe <- safeAttribute attr 
     if safe 

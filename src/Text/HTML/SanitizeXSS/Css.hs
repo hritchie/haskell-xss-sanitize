@@ -18,14 +18,16 @@ import           Data.Text.Lazy.Builder (toLazyText)
 import           Prelude                hiding (takeWhile)
 import           Text.CSS.Parse         (parseAttrs)
 import           Text.CSS.Render        (renderAttrs)
+import Text.HTML.SanitizeXSS.Types
 
 -- import FileLocation (debug, debugM)
 
 
 -- this is a direct translation from sanitizer.py, except
 --   sanitizer.py filters out url(), but this is redundant
-sanitizeCSS :: Text -> Text
-sanitizeCSS css = toStrict . toLazyText .
+
+sanitizeCSS :: Text -> XssWriter Text
+sanitizeCSS css = pure . toStrict . toLazyText .
     renderAttrs . filter isSanitaryAttr . filterUrl $ parseAttributes
   where
     filterUrl :: [(Text,Text)] -> [(Text,Text)]
