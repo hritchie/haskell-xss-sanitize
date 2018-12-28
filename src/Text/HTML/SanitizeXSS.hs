@@ -107,7 +107,7 @@ safeTags [] = pure []
 safeTags (t@(TagClose name):tags)
     | safeTagName name = (t:) <$> safeTags tags
     | otherwise = do
-          tell [XssFlag $ "unsafe tag:" <> name]
+          tell [XssFlag $ "unsafe tag: " <> name]
           safeTags tags
 safeTags (TagOpen name attributes:tags)
   | safeTagName name = do
