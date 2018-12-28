@@ -128,11 +128,23 @@ sanitizeAttribute attr = do
         tell [XssFlag $ "Unsafe attribute: " <> (T.pack . show $ attr)]
         pure Nothing
 
-
 safeAttribute :: (Text, Text) -> XssWriter Bool
-safeAttribute (name, value) = 
+safeAttribute (name, value) = do
     -- TODO start writing flags here
-    pure $ name `member` sanitaryAttributes && (name `notMember` uri_attributes || sanitaryURI value)
+    let isSanitaryAttr = name `member` sanitaryAttributes 
+        notUriAttr = name `notMember` uri_attributes
+        isSanitaryUri = sanitaryURI value
+        isOk = isSanitaryAttr && (notUriAttr || isSanitaryUri) 
+    when (not isOk) $ do
+      if (not isSanitaryUri) 
+      then
+        tell [XssFlag $ "is not sanitary attr: " <> name]
+      else do
+        when (not notUriAttr) $
+          tell [XssFlag $ "is uri attribute: " <> name]
+        when (not isSanitaryUri) $
+          tell [XssFlag $ "is not sanitary uri: " <> value]
+    pure isOk
 
 -- | Returns @True@ if the specified URI is not a potential security risk.
 sanitaryURI :: Text -> Bool
