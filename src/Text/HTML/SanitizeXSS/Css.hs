@@ -61,13 +61,15 @@ sanitizeCSS css = do
     isSanitaryAttr :: (Text, Text) -> XssRWS Bool
     isSanitaryAttr (_, "") = pure False
     isSanitaryAttr ("",_)  = pure False
-    isSanitaryAttr x@(prop, value)
+    isSanitaryAttr (prop, value)
       | prop `member` allowed_css_properties = pure True
       | (T.takeWhile (/= '-') prop) `member` allowed_css_unit_properties &&
           all allowedCssAttributeValue (T.words value) = pure True
       | prop `member` allowed_svg_properties = pure True
       | otherwise = do
-            reportUnsafe $ "unsanitary css attribute: " <> (T.pack . show $ x)
+            reportUnsafe $ 
+                let cssProp = prop <> ": " <> value
+                in "unsanitary css property: [" <> cssProp <> "]"
             pure False
 
     allowed_css_unit_properties :: Set Text
@@ -131,7 +133,7 @@ allowed_css_properties = fromList $ acceptable_css_properties <> mso_css_propert
       "speech-rate", "stress", "text-align", "text-decoration", "text-indent",
       "unicode-bidi", "vertical-align", "voice-family", "volume",
       "white-space", "width"]
-    mso_css_properties = ["msolist", "mso-fareast-langauge"]
+    mso_css_properties = ["mso-list", "mso-fareast-langauge"]
 
 allowed_css_keywords :: Set Text
 allowed_css_keywords = fromList acceptable_css_keywords
