@@ -49,6 +49,7 @@ options =
       <> header "XSS sanitizer")
 
 
+filterSubcommand :: Parser SubCommand
 filterSubcommand =
         Filter
           <$> switch (short 'q'
