@@ -67,7 +67,9 @@ flagXss input =
     snd $ evalRWS (filterTags safeTags input) initConfig initState 
 
 noOp :: Text -> Text
-noOp = renderTags . canonicalizeTags . parseTags
+noOp = renderTagsOptions renderOptions {
+        optMinimize = \x -> x `member` voidElems -- <img><img> converts to <img />, <a/> converts to <a></a>
+      } . canonicalizeTags . parseTags
 
 parse :: Text -> [Tag Text]
 parse = parseTags
@@ -144,6 +146,9 @@ safeTags (x@(TagOpen name attributes):tags)
 safeTags ((TagPosition r c):y@(TagOpen _ _):tags) = do
     modify (& lastOpenTagPosition .~ (r, c))
     safeTags (y:tags)
+safeTags ((TagPosition _ _):tags) = do
+    -- drop other positions so that RenderOptions optMinimize = True works
+    safeTags tags
 safeTags (t:tags) = do
     inUnsafe <- (not . null . _unsanitaryTagStack) <$> get
     if inUnsafe
