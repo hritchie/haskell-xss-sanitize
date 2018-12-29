@@ -62,6 +62,17 @@ initState = XssState [] (0,0) (TagText "")
 initConfig :: XssConfig
 initConfig = XssConfig (parseOptions{ optTagPosition = True })
 
+-- | decorates report with last open tag info
+reportUnsafeAttribute :: Text -> XssRWS ()
+reportUnsafeAttribute msg = do
+    st <- get
+    let pos = st ^. lastOpenTagPosition . to (T.pack . show)
+    let tag = st ^. lastOpenTag
+    let s = renderTags [tag]
+    tell [XssFlag $ msg <> " in tag " <> s <> " at " <> pos]
+    
+
+
 flagXss :: Text -> [XssFlag]
 flagXss input =
     snd $ evalRWS (filterTags safeTags input) initConfig initState
@@ -174,16 +185,7 @@ sanitizeAttribute attr = do
     safe <- safeAttribute attr
     if safe
     then pure (Just attr)
-    else do
-        s <- get
-        let pos = s ^. lastOpenTagPosition
-        let tag = s ^. lastOpenTag
-        tell [XssFlag $
-                  "Unsafe attribute: " <> (T.pack . show $ attr)
-                  <> " of tag " <> (renderTags [tag])
-                  <> " at " <> (T.pack . show $ pos)
-                  ]
-        pure Nothing
+    else pure Nothing
 
 -- returns Nothing if attribute is safe, or a reason it's not
 safeAttribute :: (Text, Text) -> XssRWS Bool
@@ -196,12 +198,10 @@ safeAttribute (name, value) = do
     when (not isOk) $ do
       if (not isSanitaryAttr)
       then
-        tell [XssFlag $ "is not sanitary attr: " <> name]
+          reportUnsafeAttribute $ "is not sanitary attr: " <> name 
       else do
-        when (not notUriAttr) $
-          tell [XssFlag $ "is uri attribute: " <> name]
-        when (not isSanitaryUri) $
-          tell [XssFlag $ "is not sanitary uri: " <> value]
+        when (not notUriAttr && not isSanitaryUri) $
+          reportUnsafeAttribute $ "is not sanitary uri attribute: " <> value
     pure isOk
 
 -- | Returns @True@ if the specified URI is not a potential security risk.
