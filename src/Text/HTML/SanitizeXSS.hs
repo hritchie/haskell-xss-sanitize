@@ -153,7 +153,7 @@ safeTags (x@(TagOpen name attributes):tags)
   | otherwise = do
         unsanitaryTagStack .= [x]
         lastOpenTag .= x
-        reportUnsafeAttribute $ "unsafe tag "
+        reportUnsafeAttribute "unsafe tag"
         safeTags tags
 safeTags ((TagPosition r c):y@(TagOpen _ _):tags) = do
     -- modify (set lastOpenTagPosition (r, c))
