@@ -63,8 +63,8 @@ initConfig :: XssConfig
 initConfig = XssConfig (parseOptions{ optTagPosition = True })
 
 -- | decorates report with last open tag info
-reportUnsafeAttribute :: Text -> XssRWS ()
-reportUnsafeAttribute msg = do
+reportUnsafe :: Text -> XssRWS ()
+reportUnsafe msg = do
     st <- get
     let (row, col) = st ^. lastOpenTagPosition
     let pos = T.pack $ "line " <> show row <> " col " <> show col
@@ -153,7 +153,7 @@ safeTags (x@(TagOpen name attributes):tags)
   | otherwise = do
         unsanitaryTagStack .= [x]
         lastOpenTag .= x
-        reportUnsafeAttribute "unsafe tag"
+        reportUnsafe "unsafe tag"
         safeTags tags
 safeTags ((TagPosition r c):y@(TagOpen _ _):tags) = do
     -- modify (set lastOpenTagPosition (r, c))
@@ -198,10 +198,10 @@ safeAttribute (name, value) = do
     when (not isOk) $ do
       if (not isSanitaryAttr)
       then
-          reportUnsafeAttribute $ "is not sanitary attr: " <> name 
+          reportUnsafe $ "is not sanitary attr: " <> name 
       else do
         when (not notUriAttr && not isSanitaryUri) $
-          reportUnsafeAttribute $ "is not sanitary uri attribute: " <> value
+          reportUnsafe $ "is not sanitary uri attribute: " <> value
     pure isOk
 
 -- | Returns @True@ if the specified URI is not a potential security risk.
