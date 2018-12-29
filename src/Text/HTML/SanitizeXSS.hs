@@ -228,7 +228,7 @@ sanitaryTags = fromList (acceptable_elements ++ mathml_elements ++ svg_elements 
   \\ (fromList svg_allow_local_href) -- extra filtering not implemented
 
 sanitaryAttributes :: Set Text
-sanitaryAttributes = fromList (allowed_html_uri_attributes ++ acceptable_attributes ++ mathml_attributes ++ svg_attributes ++ mso_attributes)
+sanitaryAttributes = fromList (allowed_html_uri_attributes ++ acceptable_attributes ++ mathml_attributes ++ svg_attributes)
   \\ (fromList svg_attr_val_allows_ref) -- extra unescaping not implemented
 
 allowed_html_uri_attributes :: [Text]
@@ -308,8 +308,6 @@ acceptable_attributes = ["abbr", "accept", "accept-charset", "accesskey",
     "urn", "valign", "value", "variable", "volume", "vspace", "vrml",
     "width", "wrap", "xml:lang"]
 
-mso_attributes :: [Text]
-mso_attributes = ["msolist", "mso-fareast-langauge"]
   
 
 acceptable_protocols :: [String]

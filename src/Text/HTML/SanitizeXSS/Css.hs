@@ -118,7 +118,7 @@ allowed_css_attribute_value_units = fromList
   [ "cm", "em", "ex", "in", "mm", "pc", "pt", "px", "%", ",", "\\"]
 
 allowed_css_properties :: Set Text
-allowed_css_properties = fromList acceptable_css_properties
+allowed_css_properties = fromList $ acceptable_css_properties <> mso_css_properties
   where
     acceptable_css_properties = ["azimuth", "background-color",
       "border-bottom-color", "border-collapse", "border-color",
@@ -131,6 +131,7 @@ allowed_css_properties = fromList acceptable_css_properties
       "speech-rate", "stress", "text-align", "text-decoration", "text-indent",
       "unicode-bidi", "vertical-align", "voice-family", "volume",
       "white-space", "width"]
+    mso_css_properties = ["msolist", "mso-fareast-langauge"]
 
 allowed_css_keywords :: Set Text
 allowed_css_keywords = fromList acceptable_css_keywords
