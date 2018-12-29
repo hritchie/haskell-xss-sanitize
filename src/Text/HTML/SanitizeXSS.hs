@@ -139,7 +139,7 @@ safeTags (t:tags) = do
     inUnsafe <- (not . null . _unsanitaryTagStack) <$> get
     if inUnsafe
     then do
-      tell [XssFlag $ "in unsafe tag: " <> (T.pack . show $ t)]
+      -- tell [XssFlag $ "in unsafe tag: " <> (T.pack . show $ t)]
       safeTags tags
     else
       (t:) <$> safeTags tags
