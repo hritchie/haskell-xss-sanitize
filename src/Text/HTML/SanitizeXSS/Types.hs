@@ -1,7 +1,9 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Text.HTML.SanitizeXSS.Types where
 import Control.Monad.RWS.Lazy
 import           Data.Text                 (Text)
 import           Text.HTML.TagSoup
+import Control.Lens
 
 
 
@@ -14,13 +16,18 @@ data XssFlag = XssFlag Text -- to develop
 -- because it is better to suppress and report the content of script tag
 
 -- are we in an unsafe tag?
-type XssState = Bool
+data XssState = XssState {
+    _unsanitaryTagStack :: [Tag Text] -- stack of open unsanitary tags
+  , _lastOpenTagPosition :: Maybe (Int, Int) -- row, col
+  } deriving Show
 
-type XssReader = ()
+data XssConfig = XssConfig {
+    _parseOptions :: ParseOptions Text
+  } 
 
-type XssRWS = RWS XssReader [XssFlag] XssState
+type XssRWS = RWS XssConfig [XssFlag] XssState
 
 type XssTagFilter = [Tag Text] -> XssRWS [Tag Text]
 
 
-
+makeLenses ''XssState

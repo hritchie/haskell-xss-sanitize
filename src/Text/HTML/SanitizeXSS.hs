@@ -24,6 +24,7 @@ module Text.HTML.SanitizeXSS
     ) where
 
 import           Codec.Binary.UTF8.String  (encodeString)
+import Control.Lens
 import Control.Monad
 import Control.Monad.RWS.Lazy
 import           Data.Char                 (toLower)
@@ -54,13 +55,13 @@ getProblematicAttributes txt =
 
 
 initState :: XssState
-initState = False
+initState = XssState [] Nothing
 
-initReader :: XssReader
-initReader = ()
+initConfig :: XssConfig
+initConfig = XssConfig (parseOptions{ optTagPosition = True })
 
 flagXss :: Text -> [XssFlag]
-flagXss input = snd $ evalRWS (filterTags safeTags input) initReader initState 
+flagXss input = snd $ evalRWS (filterTags safeTags input) initConfig initState 
 
 -- | Sanitize HTML to prevent XSS attacks.  This is equivalent to @filterTags safeTags@.
 sanitize :: Text -> Text
@@ -69,13 +70,13 @@ sanitize = sanitizeXSS
 -- | alias of sanitize function
 sanitizeXSS :: Text -> Text
 sanitizeXSS input = 
-    let r = evalRWS (filterTags safeTags input) initReader initState 
+    let r = evalRWS (filterTags safeTags input) initConfig initState 
     in fst r
 
 -- | Sanitize HTML to prevent XSS attacks and also make sure the tags are balanced.
 --   This is equivalent to @filterTags (balanceTags . safeTags)@.
 sanitizeBalance :: Text -> Text
-sanitizeBalance input = fst $ evalRWS (filterTags (balanceTags <=< safeTags) input) initReader initState 
+sanitizeBalance input = fst $ evalRWS (filterTags (balanceTags <=< safeTags) input) initConfig initState 
 
 -- | Filter which makes sure the tags are balanced.  Use with 'filterTags' and 'safeTags' to create a custom filter.
 balanceTags :: XssTagFilter
@@ -85,7 +86,8 @@ balanceTags = balance []
 --   You can insert your own custom filtering but make sure you compose your filtering function with 'safeTags'!
 filterTags :: XssTagFilter -> Text -> XssRWS Text
 filterTags f input = do
-    tags <- f . canonicalizeTags . parseTags $ input
+    parseOpts <- _parseOptions <$> ask 
+    tags <- f . canonicalizeTags . parseTagsOptions parseOpts $ input
     return $ renderTagsOptions renderOptions {
         optMinimize = \x -> x `member` voidElems -- <img><img> converts to <img />, <a/> converts to <a></a>
       } tags
@@ -112,23 +114,31 @@ safeTags [] = pure []
 safeTags (t@(TagClose name):tags)
     | safeTagName name = (t:) <$> safeTags tags
     | otherwise = do
-          tell [XssFlag $ "close unsafe tag: " <> name]
-          put False -- is unsafe tag
+          -- TODO this assumes balanced tags?
+          ts <- _unsanitaryTagStack <$> get
+          pos <- _lastOpenTagPosition <$> get
+          modify (& unsanitaryTagStack %~ drop 1) 
+          let s = renderTags . reverse $ (t:ts)
+          tell [XssFlag $ "unsafe tag: " <> s <> " at " <> (T.pack . show $ pos)]
           safeTags tags
-safeTags (TagOpen name attributes:tags)
+safeTags (x@(TagOpen name attributes):tags)
   | safeTagName name = do
         as <- mapM sanitizeAttribute attributes
         let t = TagOpen name (catMaybes as)
         (t :) <$> safeTags tags
   | otherwise = do
-        tell [XssFlag $ "open unsafe tag: " <> name]
-        put True -- end of unsafe tag
+        -- tell [XssFlag $ "open unsafe tag: " <> name]
+        modify (& unsanitaryTagStack %~ (x :))
         safeTags tags
+safeTags (x@(TagPosition r c):y@(TagOpen _ _):tags) = do
+    modify (& lastOpenTagPosition .~ Just (r, c))
+    safeTags (y:tags)
 safeTags (t:tags) = do
-    inUnsafe <- get
+    inUnsafe <- (not . null . _unsanitaryTagStack) <$> get
     if inUnsafe
     then do
-      tell [XssFlag $ "in unsafe tag: " <> (T.pack . show $ t)]
+      modify (& unsanitaryTagStack %~ (t :))
+      -- tell [XssFlag $ "in unsafe tag: " <> (T.pack . show $ t)]
       safeTags tags
     else
       (t:) <$> safeTags tags
@@ -157,7 +167,7 @@ safeAttribute (name, value) = do
         isSanitaryUri = sanitaryURI value
         isOk = isSanitaryAttr && (notUriAttr || isSanitaryUri) 
     when (not isOk) $ do
-      if (not isSanitaryUri) 
+      if (not isSanitaryAttr) 
       then
         tell [XssFlag $ "is not sanitary attr: " <> name]
       else do
