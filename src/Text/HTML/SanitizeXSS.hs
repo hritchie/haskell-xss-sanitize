@@ -138,11 +138,7 @@ safeTags [] = pure []
 safeTags (t@(TagClose name):tags)
     | safeTagName name = (t:) <$> safeTags tags
     | otherwise = do
-          -- TODO this assumes balanced tags?
-          ts <- _unsanitaryTagStack <$> get
-          pos <- _lastOpenTagPosition <$> get
           unsanitaryTagStack %= drop 1
-          let s = renderTags . reverse $ (t:ts)
           safeTags tags
 safeTags (x@(TagOpen name attributes):tags)
   | safeTagName name = do
