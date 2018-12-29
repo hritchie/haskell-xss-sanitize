@@ -3,7 +3,7 @@ module Main where
 import           Control.Concurrent
 import           Control.Monad
 import qualified Data.Text             as T (unpack)
-import qualified Data.Text.IO          as T (getContents)
+import qualified Data.Text.IO          as T (getContents, putStrLn)
 import           Options.Applicative   (execParser)
 import           System.Exit           (exitSuccess, exitWith, ExitCode(..))
 import           Text.HTML.SanitizeXSS
@@ -26,10 +26,12 @@ main = do
           if quickScan
           then exitWith (ExitFailure 1)
           else mapM_ (putStrLn . show) xs
-
     Sanitize -> do
       input <- T.getContents
-      putStrLn $ T.unpack $ sanitizeBalance input
+      T.putStrLn $ sanitizeBalance input
+    NoOp -> do
+      input <- T.getContents
+      T.putStrLn $ noOp input
     PubSub -> do
       waitForConnection
       pool <- getConnPool
