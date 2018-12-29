@@ -8,7 +8,6 @@ module Text.HTML.SanitizeXSS.Css (
   ) where
 
 import           Control.Monad
-import           Control.Monad.Writer (tell)
 import           Data.Monoid ((<>))
 import           Control.Applicative    (pure, (<|>))
 import           Data.Attoparsec.Text
@@ -55,7 +54,7 @@ sanitizeCSS css = do
     parseAttributes :: Text -> XssRWS [(Text, Text)]
     parseAttributes css' = case parseAttrs css' of
       Left err   -> do
-          tell [XssFlag $ "css parse error: " <> (T.pack . show $ err)]
+          reportUnsafe $ "css parse error: " <> (T.pack . show $ err)
           pure []
       Right as -> pure as
 
@@ -68,7 +67,7 @@ sanitizeCSS css = do
           all allowedCssAttributeValue (T.words value) = pure True
       | prop `member` allowed_svg_properties = pure True
       | otherwise = do
-            tell [XssFlag $ "unsanitary css attribute: " <> (T.pack . show $ x)]
+            reportUnsafe $ "unsanitary css attribute: " <> (T.pack . show $ x)
             pure False
 
     allowed_css_unit_properties :: Set Text

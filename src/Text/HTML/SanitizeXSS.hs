@@ -55,28 +55,24 @@ getProblematicAttributes txt =
   in
     toList filteredTags
 
-
 initState :: XssState
 initState = XssState [] (0,0) (TagText "")
 
 initConfig :: XssConfig
 initConfig = XssConfig (parseOptions{ optTagPosition = True })
 
--- | decorates report with last open tag info
-reportUnsafe :: Text -> XssRWS ()
-reportUnsafe msg = do
-    st <- get
-    let (row, col) = st ^. lastOpenTagPosition
-    let pos = T.pack $ "line " <> show row <> " col " <> show col
-    let tag = st ^. lastOpenTag
-    let s = renderTags [tag]
-    tell [XssFlag $ msg <> " in tag " <> s <> " at " <> pos]
-    
+   
+formatFlag :: XssFlag -> Text
+formatFlag x = 
+    let (row, col) = x ^. flagPosition 
+        pos = T.pack $ "line " <> show row <> " col " <> show col
+        tag = renderTags [x^.flagOpenTag]
+    in pos <> " " <> tag <> ": " <> (x^.flagReason)
 
-
-flagXss :: Text -> [XssFlag]
+flagXss :: Text -> [Text]
 flagXss input =
-    snd $ evalRWS (filterTags safeTags input) initConfig initState
+    map formatFlag . snd 
+      $ evalRWS (filterTags safeTags input) initConfig initState
 
 noOp :: Text -> Text
 noOp = renderTagsOptions renderOptions {

@@ -68,7 +68,7 @@ main = do
         xs -> do
           if quickScan
           then exitWith (ExitFailure 1)
-          else mapM_ (putStrLn . show) xs
+          else mapM_ T.putStrLn xs
     Sanitize -> do
       input <- T.getContents
       T.putStrLn $ sanitizeBalance input
