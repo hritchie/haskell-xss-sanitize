@@ -163,6 +163,7 @@ safeTagName :: Text -> Bool
 safeTagName tagname = tagname `member` sanitaryTags
 
 -- | low-level API if you have your own HTML parser. Used by safeTags.
+-- TODO change this to return also a list of unsanitary attrs with reasons
 sanitizeAttribute :: (Text, Text) -> XssRWS (Maybe (Text, Text))
 sanitizeAttribute ("style", value) = do
     css <- sanitizeCSS value
