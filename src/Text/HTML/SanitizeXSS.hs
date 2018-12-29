@@ -61,7 +61,8 @@ initConfig :: XssConfig
 initConfig = XssConfig (parseOptions{ optTagPosition = True })
 
 flagXss :: Text -> [XssFlag]
-flagXss input = snd $ evalRWS (filterTags safeTags input) initConfig initState 
+flagXss input = 
+    snd $ evalRWS (filterTags safeTags input) initConfig initState 
 
 -- | Sanitize HTML to prevent XSS attacks.  This is equivalent to @filterTags safeTags@.
 sanitize :: Text -> Text

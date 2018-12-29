@@ -29,7 +29,7 @@ main = do
 
     Sanitize -> do
       input <- T.getContents
-      putStrLn $ T.unpack $ sanitize input
+      putStrLn $ T.unpack $ sanitizeBalance input
     PubSub -> do
       waitForConnection
       pool <- getConnPool
