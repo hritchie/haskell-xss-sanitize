@@ -225,8 +225,8 @@ acceptable_elements = ["a", "abbr", "acronym", "address", "area",
     "source", "spacer", "span", "strike", "strong", "sub", "sup", "table",
     "tbody", "td", "textarea", "time", "tfoot", "th", "thead", "tr", "tt",
     "u", "ul", "var", "video"
-    -- MACKEY for immersion HTML
-    , "style"]
+    -- MACKEY 
+    , "style", "head", "body", "html"]
 
 mathml_elements :: [Text]
 mathml_elements = ["maction", "math", "merror", "mfrac", "mi",
