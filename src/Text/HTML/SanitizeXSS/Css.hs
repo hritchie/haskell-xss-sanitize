@@ -29,15 +29,15 @@ import Text.HTML.SanitizeXSS.Types
 -- this is a direct translation from sanitizer.py, except
 --   sanitizer.py filters out url(), but this is redundant
 
-sanitizeCSS :: Text -> XssWriter Text
+sanitizeCSS :: Text -> XssRWS Text
 sanitizeCSS css = do
     as <- filterM isSanitaryAttr =<< filterUrl =<< parseAttributes css
     pure . toStrict . toLazyText .  renderAttrs $ as 
   where
-    filterUrl :: [(Text,Text)] -> XssWriter [(Text,Text)]
+    filterUrl :: [(Text,Text)] -> XssRWS [(Text,Text)]
     filterUrl = mapM filterUrlAttribute
       where
-        filterUrlAttribute :: (Text, Text) -> XssWriter (Text, Text)
+        filterUrlAttribute :: (Text, Text) -> XssRWS (Text, Text)
         filterUrlAttribute (prop,value) =
             case parseOnly rejectUrl value of
               Left _      -> pure (prop,value)
@@ -53,14 +53,14 @@ sanitizeCSS css = do
           return $ T.append (T.pack pre) rest
 
 
-    parseAttributes :: Text -> XssWriter [(Text, Text)]
+    parseAttributes :: Text -> XssRWS [(Text, Text)]
     parseAttributes css' = case parseAttrs css' of
       Left err   -> do
           tell [XssFlag $ "css parse error: " <> (T.pack . show $ err)]
           pure []
       Right as -> pure as
 
-    isSanitaryAttr :: (Text, Text) -> XssWriter Bool
+    isSanitaryAttr :: (Text, Text) -> XssRWS Bool
     isSanitaryAttr (_, "") = pure False
     isSanitaryAttr ("",_)  = pure False
     isSanitaryAttr x@(prop, value)

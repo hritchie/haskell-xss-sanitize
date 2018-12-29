@@ -25,7 +25,7 @@ module Text.HTML.SanitizeXSS
 
 import           Codec.Binary.UTF8.String  (encodeString)
 import Control.Monad
-import Control.Monad.Writer
+import Control.Monad.RWS.Lazy
 import           Data.Char                 (toLower)
 import           Data.Maybe                (catMaybes)
 import           Data.Set                  (Set, fromAscList, fromList, member,
@@ -53,9 +53,14 @@ getProblematicAttributes txt =
     toList filteredTags
 
 
-flagXss :: Text -> [XssFlag]
-flagXss = snd . runWriter . filterTags safeTags 
+initState :: XssState
+initState = False
 
+initReader :: XssReader
+initReader = ()
+
+flagXss :: Text -> [XssFlag]
+flagXss input = snd $ evalRWS (filterTags safeTags input) initReader initState 
 
 -- | Sanitize HTML to prevent XSS attacks.  This is equivalent to @filterTags safeTags@.
 sanitize :: Text -> Text
@@ -64,13 +69,13 @@ sanitize = sanitizeXSS
 -- | alias of sanitize function
 sanitizeXSS :: Text -> Text
 sanitizeXSS input = 
-    let r = runWriter . filterTags safeTags $ input
+    let r = evalRWS (filterTags safeTags input) initReader initState 
     in fst r
 
 -- | Sanitize HTML to prevent XSS attacks and also make sure the tags are balanced.
 --   This is equivalent to @filterTags (balanceTags . safeTags)@.
 sanitizeBalance :: Text -> Text
-sanitizeBalance = fst . runWriter . filterTags (balanceTags <=< safeTags)
+sanitizeBalance input = fst $ evalRWS (filterTags (balanceTags <=< safeTags) input) initReader initState 
 
 -- | Filter which makes sure the tags are balanced.  Use with 'filterTags' and 'safeTags' to create a custom filter.
 balanceTags :: XssTagFilter
@@ -78,7 +83,7 @@ balanceTags = balance []
 
 -- | Parse the given text to a list of tags, apply the given filtering function, and render back to HTML.
 --   You can insert your own custom filtering but make sure you compose your filtering function with 'safeTags'!
-filterTags :: XssTagFilter -> Text -> XssWriter Text
+filterTags :: XssTagFilter -> Text -> XssRWS Text
 filterTags f input = do
     tags <- f . canonicalizeTags . parseTags $ input
     return $ renderTagsOptions renderOptions {
@@ -107,21 +112,32 @@ safeTags [] = pure []
 safeTags (t@(TagClose name):tags)
     | safeTagName name = (t:) <$> safeTags tags
     | otherwise = do
-          tell [XssFlag $ "unsafe tag: " <> name]
+          tell [XssFlag $ "close unsafe tag: " <> name]
+          put False -- is unsafe tag
           safeTags tags
 safeTags (TagOpen name attributes:tags)
   | safeTagName name = do
         as <- mapM sanitizeAttribute attributes
         let t = TagOpen name (catMaybes as)
         (t :) <$> safeTags tags
-  | otherwise = safeTags tags
-safeTags (t:tags) = (t:) <$> safeTags tags
+  | otherwise = do
+        tell [XssFlag $ "open unsafe tag: " <> name]
+        put True -- end of unsafe tag
+        safeTags tags
+safeTags (t:tags) = do
+    inUnsafe <- get
+    if inUnsafe
+    then do
+      tell [XssFlag $ "in unsafe tag: " <> (T.pack . show $ t)]
+      safeTags tags
+    else
+      (t:) <$> safeTags tags
 
 safeTagName :: Text -> Bool
 safeTagName tagname = tagname `member` sanitaryTags
 
 -- | low-level API if you have your own HTML parser. Used by safeTags.
-sanitizeAttribute :: (Text, Text) -> XssWriter (Maybe (Text, Text))
+sanitizeAttribute :: (Text, Text) -> XssRWS (Maybe (Text, Text))
 sanitizeAttribute ("style", value) = do
     css <- sanitizeCSS value
     pure $ if T.null css then Nothing else Just ("style", css)
@@ -133,7 +149,7 @@ sanitizeAttribute attr = do
         tell [XssFlag $ "Unsafe attribute: " <> (T.pack . show $ attr)]
         pure Nothing
 
-safeAttribute :: (Text, Text) -> XssWriter Bool
+safeAttribute :: (Text, Text) -> XssRWS Bool
 safeAttribute (name, value) = do
     -- TODO start writing flags here
     let isSanitaryAttr = name `member` sanitaryAttributes 
