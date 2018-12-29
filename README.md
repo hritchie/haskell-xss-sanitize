@@ -4,11 +4,57 @@ This fork of this library does not sanitize `<script>` tags.
 
 Also, the executable has been renamed to 
 
-    xss-sanitize-mackey
+    xss
 
 instead of 
 
     xss-sanitize
+
+
+## Reporting unsafe content (MackeyRMS)
+
+
+Use the `xss flag` subcommand:
+
+```
+$ cat index.html | xss flag
+line 1 col 1 <!DOCTYPE HTML>: unsafe tag
+line 4 col 3 <meta charset="UTF-8">: unsafe tag
+line 10 col 3 <script src="./script.js">: unsafe tag
+line 11 col 3 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js">: unsafe tag
+line 14 col 3 <script type="text/javascript">: unsafe tag
+line 14 col 34 <script type="text/javascript">: content in script tag:
+  var app = Elm.Demo.fullscreen();
+  setTimeout(function() {
+    var editor = ace.edit('editor');
+    editor.setTheme("ace/theme/monokai");
+    editor.getSession().setMode("ace/mode/html");
+    editor.on("change", function(e) {
+      app.ports.input.send(editor.getValue());
+    });
+    app.ports.init.send(editor.getValue());
+    var commandKey = false;
+    window.addEventListener('keydown', function(e) {
+      if(e.keyCode == 91 || e.keyCode == 93 || e.keyCode == 224 || e.keyCode == 17) {
+        commandKey = true;
+      }
+    }, true);
+    window.addEventListener('keyup', function(e) {
+      if(e.keyCode == 91 || e.keyCode == 93 || e.keyCode == 224 || e.keyCode == 17) {
+        commandKey = false;
+      }
+    }, true);
+    window.addEventListener('keydown', function(e) {
+      if((e.ctrlKey || commandKey) && e.keyCode == 83) {
+        e.preventDefault();
+        app.ports.parse.send({});
+      }
+    }, true);
+  });
+```
+
+
+## Old readme
 
 # Summary
 
