@@ -147,11 +147,8 @@ safeTags (x@(TagOpen name attributes):tags)
         lastOpenTag .= x
         reportUnsafe "unsafe tag"
         safeTags tags
-safeTags ((TagPosition r c):y@(TagOpen _ _):tags) = do
-    -- modify (set lastOpenTagPosition (r, c))
+safeTags ((TagPosition r c):tags) = do
     lastOpenTagPosition .= (r, c)
-    safeTags (y:tags)
-safeTags ((TagPosition _ _):tags) = do
     -- drop other positions so that RenderOptions optMinimize = True works
     safeTags tags
 safeTags (t@(TagText c):tags) = do
