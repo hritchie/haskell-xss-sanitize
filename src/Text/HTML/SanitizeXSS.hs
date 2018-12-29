@@ -158,14 +158,16 @@ safeTags ((TagPosition r c):y@(TagOpen _ _):tags) = do
 safeTags ((TagPosition _ _):tags) = do
     -- drop other positions so that RenderOptions optMinimize = True works
     safeTags tags
-safeTags (t:tags) = do
+safeTags (t@(TagText c):tags) = do
     inUnsafe <- _unsanitaryTagStack <$> get
     case inUnsafe of
       ((TagOpen "script" _):_) -> do
-        tell [XssFlag $ "content in script tag: " <> (T.pack . show $ t)]
+        reportUnsafe $ "content in script tag: " <> c
         safeTags tags
       _ ->
         (t:) <$> safeTags tags
+safeTags (t:tags) = 
+    (t:) <$> safeTags tags
 
 safeTagName :: Text -> Bool
 safeTagName = (`member` sanitaryTags)
