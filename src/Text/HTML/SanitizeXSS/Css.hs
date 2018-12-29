@@ -25,7 +25,6 @@ import Text.HTML.SanitizeXSS.Types
 
 -- import FileLocation (debug, debugM)
 
-
 -- this is a direct translation from sanitizer.py, except
 --   sanitizer.py filters out url(), but this is redundant
 

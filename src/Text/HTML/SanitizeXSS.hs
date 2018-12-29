@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes        #-}
 -- | Sanatize HTML to prevent XSS attacks.
 --
 -- See README.md <http://github.com/gregwebs/haskell-xss-sanitize> for more details.
@@ -25,21 +25,21 @@ module Text.HTML.SanitizeXSS
     , sanitaryURI
     ) where
 
-import           Codec.Binary.UTF8.String  (encodeString)
-import Control.Lens
-import Control.Monad
-import Control.Monad.RWS.Lazy
-import           Data.Char                 (toLower)
-import           Data.Maybe                (catMaybes)
-import           Data.Set                  (Set, fromAscList, fromList, member,
-                                            notMember, toList, (\\))
-import           Data.Text                 (Text)
-import qualified Data.Text                 as T
-import           Network.URI               (URI (..), escapeURIString,
-                                            isAllowedInURI, parseURIReference,
-                                            uriScheme)
-import           Text.HTML.SanitizeXSS.Types
+import           Codec.Binary.UTF8.String    (encodeString)
+import           Control.Lens
+import           Control.Monad
+import           Control.Monad.RWS.Lazy
+import           Data.Char                   (toLower)
+import           Data.Maybe                  (catMaybes)
+import           Data.Set                    (Set, fromAscList, fromList,
+                                              member, notMember, toList, (\\))
+import           Data.Text                   (Text)
+import qualified Data.Text                   as T
+import           Network.URI                 (URI (..), escapeURIString,
+                                              isAllowedInURI, parseURIReference,
+                                              uriScheme)
 import           Text.HTML.SanitizeXSS.Css
+import           Text.HTML.SanitizeXSS.Types
 import           Text.HTML.TagSoup
 
 
@@ -63,8 +63,8 @@ initConfig :: XssConfig
 initConfig = XssConfig (parseOptions{ optTagPosition = True })
 
 flagXss :: Text -> [XssFlag]
-flagXss input = 
-    snd $ evalRWS (filterTags safeTags input) initConfig initState 
+flagXss input =
+    snd $ evalRWS (filterTags safeTags input) initConfig initState
 
 noOp :: Text -> Text
 noOp = renderTagsOptions renderOptions {
@@ -80,14 +80,14 @@ sanitize = sanitizeXSS
 
 -- | alias of sanitize function
 sanitizeXSS :: Text -> Text
-sanitizeXSS input = 
-    let r = evalRWS (filterTags safeTags input) initConfig initState 
+sanitizeXSS input =
+    let r = evalRWS (filterTags safeTags input) initConfig initState
     in fst r
 
 -- | Sanitize HTML to prevent XSS attacks and also make sure the tags are balanced.
 --   This is equivalent to @filterTags (balanceTags . safeTags)@.
 sanitizeBalance :: Text -> Text
-sanitizeBalance input = fst $ evalRWS (filterTags (balanceTags <=< safeTags) input) initConfig initState 
+sanitizeBalance input = fst $ evalRWS (filterTags (balanceTags <=< safeTags) input) initConfig initState
 
 -- | Filter which makes sure the tags are balanced.  Use with 'filterTags' and 'safeTags' to create a custom filter.
 balanceTags :: XssTagFilter
@@ -97,10 +97,11 @@ balanceTags = balance []
 --   You can insert your own custom filtering but make sure you compose your filtering function with 'safeTags'!
 filterTags :: XssTagFilter -> Text -> XssRWS Text
 filterTags f input = do
-    parseOpts <- _parseOptions <$> ask 
+    parseOpts <- _parseOptions <$> ask
     tags <- f . canonicalizeTags . parseTagsOptions parseOpts $ input
     return $ renderTagsOptions renderOptions {
-        optMinimize = \x -> x `member` voidElems -- <img><img> converts to <img />, <a/> converts to <a></a>
+        -- <img><img> converts to <img />, <a/> converts to <a></a>
+        optMinimize = \x -> x `member` voidElems
       } tags
 
 voidElems :: Set T.Text
@@ -160,38 +161,40 @@ safeTags (t:tags) = do
         (t:) <$> safeTags tags
 
 safeTagName :: Text -> Bool
-safeTagName tagname = tagname `member` sanitaryTags
+safeTagName = (`member` sanitaryTags)
 
 -- | low-level API if you have your own HTML parser. Used by safeTags.
 -- TODO change this to return also a list of unsanitary attrs with reasons
+
 sanitizeAttribute :: (Text, Text) -> XssRWS (Maybe (Text, Text))
 sanitizeAttribute ("style", value) = do
     css <- sanitizeCSS value
     pure $ if T.null css then Nothing else Just ("style", css)
 sanitizeAttribute attr = do
-    safe <- safeAttribute attr 
-    if safe 
+    safe <- safeAttribute attr
+    if safe
     then pure (Just attr)
     else do
         s <- get
-        let pos = s ^. lastOpenTagPosition 
+        let pos = s ^. lastOpenTagPosition
         let tag = s ^. lastOpenTag
-        tell [XssFlag $ 
+        tell [XssFlag $
                   "Unsafe attribute: " <> (T.pack . show $ attr)
                   <> " of tag " <> (renderTags [tag])
                   <> " at " <> (T.pack . show $ pos)
                   ]
         pure Nothing
 
+-- returns Nothing if attribute is safe, or a reason it's not
 safeAttribute :: (Text, Text) -> XssRWS Bool
 safeAttribute (name, value) = do
     -- TODO start writing flags here
-    let isSanitaryAttr = name `member` sanitaryAttributes 
+    let isSanitaryAttr = name `member` sanitaryAttributes
         notUriAttr = name `notMember` uri_attributes
         isSanitaryUri = sanitaryURI value
-        isOk = isSanitaryAttr && (notUriAttr || isSanitaryUri) 
+        isOk = isSanitaryAttr && (notUriAttr || isSanitaryUri)
     when (not isOk) $ do
-      if (not isSanitaryAttr) 
+      if (not isSanitaryAttr)
       then
         tell [XssFlag $ "is not sanitary attr: " <> name]
       else do
@@ -259,7 +262,7 @@ acceptable_elements = ["a", "abbr", "acronym", "address", "area",
     "source", "spacer", "span", "strike", "strong", "sub", "sup", "table",
     "tbody", "td", "textarea", "time", "tfoot", "th", "thead", "tr", "tt",
     "u", "ul", "var", "video"
-    -- MACKEY 
+    -- MACKEY
     , "style", "head", "body", "html"]
 
 mathml_elements :: [Text]
