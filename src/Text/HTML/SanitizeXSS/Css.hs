@@ -133,7 +133,7 @@ allowed_css_properties = fromList $ acceptable_css_properties <> mso_css_propert
       "speech-rate", "stress", "text-align", "text-decoration", "text-indent",
       "unicode-bidi", "vertical-align", "voice-family", "volume",
       "white-space", "width"]
-    mso_css_properties = ["mso-list", "mso-fareast-langauge"]
+    mso_css_properties = ["mso-list", "mso-fareast-language"]
 
 allowed_css_keywords :: Set Text
 allowed_css_keywords = fromList acceptable_css_keywords
