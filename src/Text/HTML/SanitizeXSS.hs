@@ -67,7 +67,8 @@ formatFlag x =
     let (row, col) = x ^. flagPosition 
         pos = T.pack $ "line " <> show row <> " col " <> show col
         tag = renderTags [x^.flagOpenTag]
-    in pos <> " " <> tag <> ": " <> (x^.flagReason)
+        msg = x^.flagReason
+    in pos <> " " <> msg <> ": " <> tag
 
 flagXss :: Text -> [Text]
 flagXss input =
@@ -145,7 +146,7 @@ safeTags (x@(TagOpen name attributes):tags)
   | otherwise = do
         unsanitaryTagStack .= [x]
         lastOpenTag .= x
-        reportUnsafe "will strip unsafe tag: "
+        reportUnsafe "will strip unsafe tag"
         safeTags tags
 safeTags ((TagPosition r c):tags) = do
     lastOpenTagPosition .= (r, c)
@@ -157,7 +158,7 @@ safeTags (t@(TagText c):tags) = do
       ((TagOpen "script" _):_) -> do
         -- TODO allow command line option determine whether to print entire script
         -- content or just the beginning
-        reportUnsafe $ "will strip content in script tag: " <> c
+        reportUnsafe $ "will strip script tag content: " <> c
         safeTags tags
       _ -> (t:) <$> safeTags tags
 safeTags (t:tags) = 
@@ -190,10 +191,10 @@ safeAttribute (name, value) = do
     when (not isOk) $ do
       if (not isSanitaryAttr)
       then
-          reportUnsafe $ "will strip unsafe attr: " <> name 
+          reportUnsafe $ "will strip unsafe attr [" <> name <> "] from tag"
       else do
         when (not notUriAttr && not isSanitaryUri) $
-          reportUnsafe $ "will strip unsafe uri attribute: " <> value
+          reportUnsafe $ "will strip unsafe uri attribute [" <> value <> "] from tag"
     pure isOk
 
 -- | Returns @True@ if the specified URI is not a potential security risk.
