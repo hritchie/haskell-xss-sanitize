@@ -145,7 +145,7 @@ safeTags (x@(TagOpen name attributes):tags)
   | otherwise = do
         unsanitaryTagStack .= [x]
         lastOpenTag .= x
-        reportUnsafe "unsafe tag"
+        reportUnsafe "will strip unsafe tag: "
         safeTags tags
 safeTags ((TagPosition r c):tags) = do
     lastOpenTagPosition .= (r, c)
@@ -157,7 +157,7 @@ safeTags (t@(TagText c):tags) = do
       ((TagOpen "script" _):_) -> do
         -- TODO allow command line option determine whether to print entire script
         -- content or just the beginning
-        reportUnsafe $ "content in script tag: " <> c
+        reportUnsafe $ "will strip content in script tag: " <> c
         safeTags tags
       _ -> (t:) <$> safeTags tags
 safeTags (t:tags) = 
@@ -190,10 +190,10 @@ safeAttribute (name, value) = do
     when (not isOk) $ do
       if (not isSanitaryAttr)
       then
-          reportUnsafe $ "is not sanitary attr: " <> name 
+          reportUnsafe $ "will strip unsafe attr: " <> name 
       else do
         when (not notUriAttr && not isSanitaryUri) $
-          reportUnsafe $ "is not sanitary uri attribute: " <> value
+          reportUnsafe $ "will strip unsafe uri attribute: " <> value
     pure isOk
 
 -- | Returns @True@ if the specified URI is not a potential security risk.
