@@ -136,11 +136,11 @@ safeTags ((TagPosition r c):y@(TagOpen _ _):tags) = do
     modify (& lastOpenTagPosition .~ (r, c))
     safeTags (y:tags)
 safeTags (t:tags) = do
-    inUnsafe <- (not . null . _unsanitaryTagStack) <$> get
+    inUnsafe <- (not . even . length . _unsanitaryTagStack) <$> get
     if inUnsafe
     then do
       modify (& unsanitaryTagStack %~ (t :))
-      -- tell [XssFlag $ "in unsafe tag: " <> (T.pack . show $ t)]
+      tell [XssFlag $ "in unsafe tag: " <> (T.pack . show $ t)]
       safeTags tags
     else
       (t:) <$> safeTags tags
