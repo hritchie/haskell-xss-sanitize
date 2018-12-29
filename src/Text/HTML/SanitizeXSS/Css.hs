@@ -69,7 +69,7 @@ sanitizeCSS css = do
       | otherwise = do
             reportUnsafe $ 
                 let cssProp = prop <> ": " <> value
-                in "unsanitary css property: [" <> cssProp <> "]"
+                in "will strip unrecognized css property: [" <> cssProp <> "]"
             pure False
 
     allowed_css_unit_properties :: Set Text
