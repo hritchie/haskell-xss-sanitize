@@ -162,6 +162,8 @@ safeTags (t@(TagText c):tags) = do
     inUnsafe <- _unsanitaryTagStack <$> get
     case inUnsafe of
       ((TagOpen "script" _):_) -> do
+        -- TODO allow command line option determine whether to print entire script
+        -- content or just the beginning
         reportUnsafe $ "content in script tag: " <> c
         safeTags tags
       _ ->
