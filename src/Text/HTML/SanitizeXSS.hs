@@ -66,7 +66,8 @@ initConfig = XssConfig (parseOptions{ optTagPosition = True })
 reportUnsafeAttribute :: Text -> XssRWS ()
 reportUnsafeAttribute msg = do
     st <- get
-    let pos = st ^. lastOpenTagPosition . to (T.pack . show)
+    let (row, col) = st ^. lastOpenTagPosition
+    let pos = T.pack $ "line " <> show row <> " col " <> show col
     let tag = st ^. lastOpenTag
     let s = renderTags [tag]
     tell [XssFlag $ msg <> " in tag " <> s <> " at " <> pos]
@@ -142,7 +143,6 @@ safeTags (t@(TagClose name):tags)
           pos <- _lastOpenTagPosition <$> get
           unsanitaryTagStack %= drop 1
           let s = renderTags . reverse $ (t:ts)
-          tell [XssFlag $ "unsafe tag: " <> s <> " at " <> (T.pack . show $ pos)]
           safeTags tags
 safeTags (x@(TagOpen name attributes):tags)
   | safeTagName name = do
@@ -151,9 +151,9 @@ safeTags (x@(TagOpen name attributes):tags)
         let t = TagOpen name (catMaybes as)
         (t :) <$> safeTags tags
   | otherwise = do
-        -- tell [XssFlag $ "open unsafe tag: " <> name]
         unsanitaryTagStack .= [x]
         lastOpenTag .= x
+        reportUnsafeAttribute $ "unsafe tag "
         safeTags tags
 safeTags ((TagPosition r c):y@(TagOpen _ _):tags) = do
     -- modify (set lastOpenTagPosition (r, c))
