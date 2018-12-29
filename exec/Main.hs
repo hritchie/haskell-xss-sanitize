@@ -77,11 +77,9 @@ main = do
     Parse -> do
       input <- T.getContents
       mapM_ (putStrLn . show) $ parse input
-
     PubSub -> do
       waitForConnection
       pool <- getConnPool
       mqActions <- initPubSub
-
       subscribeAndFilter pool mqActions
       forever (threadDelay maxBound)
