@@ -22,6 +22,7 @@ library
     hs-source-dirs:   src
     build-depends:    base == 4.*
                     , aeson
+                    , unordered-containers
                     , lens-aeson
                     , attoparsec  
                     , bytestring

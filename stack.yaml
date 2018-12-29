@@ -13,6 +13,7 @@ extra-deps:
   - git: git@github.com:MackeyRMS/rms-mq.git
     commit: 5321101f109732ad51c4672d66c3d61381a00065 # 10/09 wait for redis connection with retries
 
+
 # Override default flag values for local packages and extra-deps
 flags:
   xss-sanitize:

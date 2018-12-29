@@ -1,3 +1,10 @@
+{-
+
+https://stackoverflow.com/questions/3607894/cross-site-scripting-in-css-stylesheets
+
+https://stackoverflow.com/questions/476276/using-javascript-in-css#answer-482088
+
+-}
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Text.HTML.SanitizeXSS.Css (
@@ -7,20 +14,21 @@ module Text.HTML.SanitizeXSS.Css (
 -- #endif
   ) where
 
+import           Control.Applicative         (pure, (<|>))
 import           Control.Monad
-import           Data.Monoid ((<>))
-import           Control.Applicative    (pure, (<|>))
 import           Data.Attoparsec.Text
-import           Data.Char              (isDigit)
-import           Data.Set               (Set, fromList, member)
-import           Data.Text              (Text)
-import qualified Data.Text              as T
-import           Data.Text.Lazy         (toStrict)
-import           Data.Text.Lazy.Builder (toLazyText)
-import           Prelude                hiding (takeWhile)
-import           Text.CSS.Parse         (parseAttrs)
-import           Text.CSS.Render        (renderAttrs)
-import Text.HTML.SanitizeXSS.Types
+import           Data.Char                   (isDigit)
+import           Data.Monoid                 ((<>))
+import           Data.Set                    (Set, fromList, member)
+import           qualified Data.HashSet  as H
+import           Data.Text                   (Text)
+import qualified Data.Text                   as T
+import           Data.Text.Lazy              (toStrict)
+import           Data.Text.Lazy.Builder      (toLazyText)
+import           Prelude                     hiding (takeWhile)
+import           Text.CSS.Parse              (parseAttrs)
+import           Text.CSS.Render             (renderAttrs)
+import           Text.HTML.SanitizeXSS.Types
 
 -- import FileLocation (debug, debugM)
 
@@ -30,7 +38,7 @@ import Text.HTML.SanitizeXSS.Types
 sanitizeCSS :: Text -> XssRWS Text
 sanitizeCSS css = do
     as <- filterM isSanitaryAttr =<< filterUrl =<< parseAttributes css
-    pure . toStrict . toLazyText .  renderAttrs $ as 
+    pure . toStrict . toLazyText .  renderAttrs $ as
   where
     filterUrl :: [(Text,Text)] -> XssRWS [(Text,Text)]
     filterUrl = mapM filterUrlAttribute
@@ -62,12 +70,12 @@ sanitizeCSS css = do
     isSanitaryAttr (_, "") = pure False
     isSanitaryAttr ("",_)  = pure False
     isSanitaryAttr (prop, value)
-      | prop `member` allowed_css_properties = pure True
+      | (T.toLower prop) `H.member` allowed_css_properties = pure True
       | (T.takeWhile (/= '-') prop) `member` allowed_css_unit_properties &&
           all allowedCssAttributeValue (T.words value) = pure True
-      | prop `member` allowed_svg_properties = pure True
+      | prop `H.member` allowed_svg_properties = pure True
       | otherwise = do
-            reportUnsafe $ 
+            reportUnsafe $
                 let cssProp = prop <> ": " <> value
                 in "will strip unrecognized css property: [" <> cssProp <> "]"
             pure False
@@ -77,7 +85,7 @@ sanitizeCSS css = do
 
 allowedCssAttributeValue :: Text -> Bool
 allowedCssAttributeValue val =
-  val `member` allowed_css_keywords ||
+  val `H.member` allowed_css_keywords ||
     case parseOnly allowedCssAttributeParser val of
         Left _  -> False
         Right b -> b
@@ -110,17 +118,20 @@ allowedCssAttributeValue val =
       skipOk isDigit >> skipOk isDigit
       skipSpace
       unit <- takeText
-      return $ T.null unit || unit `member` allowed_css_attribute_value_units
+      return $ T.null unit || (T.toLower unit) `H.member` allowed_css_attribute_value_units
 
 skipOk :: (Char -> Bool) -> Parser ()
 skipOk p = skip p <|> pure ()
 
-allowed_css_attribute_value_units :: Set Text
-allowed_css_attribute_value_units = fromList
+allowed_css_attribute_value_units :: H.HashSet Text
+allowed_css_attribute_value_units = H.fromList
   [ "cm", "em", "ex", "in", "mm", "pc", "pt", "px", "%", ",", "\\"]
 
-allowed_css_properties :: Set Text
-allowed_css_properties = fromList $ acceptable_css_properties <> mso_css_properties
+-- We need case insensitive membership
+-- https://stackoverflow.com/questions/17967371/are-property-values-in-css-case-sensitive/26860699#26860699
+
+allowed_css_properties :: H.HashSet Text
+allowed_css_properties = H.fromList $ acceptable_css_properties <> mso_css_properties
   where
     acceptable_css_properties = ["azimuth", "background-color",
       "border-bottom-color", "border-collapse", "border-color",
@@ -135,8 +146,8 @@ allowed_css_properties = fromList $ acceptable_css_properties <> mso_css_propert
       "white-space", "width"]
     mso_css_properties = ["mso-list", "mso-fareast-language"]
 
-allowed_css_keywords :: Set Text
-allowed_css_keywords = fromList acceptable_css_keywords
+allowed_css_keywords :: H.HashSet Text
+allowed_css_keywords = H.fromList acceptable_css_keywords
   where
     acceptable_css_keywords = ["auto", "aqua", "black", "block", "blue",
       "bold", "both", "bottom", "brown", "center", "collapse", "dashed",
@@ -146,8 +157,8 @@ allowed_css_keywords = fromList acceptable_css_keywords
       "transparent", "underline", "white", "yellow"]
 
 -- used in css filtering
-allowed_svg_properties :: Set Text
-allowed_svg_properties = fromList acceptable_svg_properties
+allowed_svg_properties :: H.HashSet Text
+allowed_svg_properties = H.fromList acceptable_svg_properties
   where
     acceptable_svg_properties = [ "fill", "fill-opacity", "fill-rule",
         "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin",
