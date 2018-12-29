@@ -18,7 +18,7 @@ data XssFlag = XssFlag Text -- to develop
 -- are we in an unsafe tag?
 data XssState = XssState {
     _unsanitaryTagStack :: [Tag Text] -- stack of open unsanitary tags
-  , _lastOpenTagPosition :: Maybe (Int, Int) -- row, col
+  , _lastOpenTagPosition :: (Int, Int) -- row, col
   } deriving Show
 
 data XssConfig = XssConfig {

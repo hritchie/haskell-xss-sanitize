@@ -55,7 +55,7 @@ getProblematicAttributes txt =
 
 
 initState :: XssState
-initState = XssState [] Nothing
+initState = XssState [] (0,0)
 
 initConfig :: XssConfig
 initConfig = XssConfig (parseOptions{ optTagPosition = True })
@@ -131,7 +131,7 @@ safeTags (x@(TagOpen name attributes):tags)
         modify (& unsanitaryTagStack %~ (x :))
         safeTags tags
 safeTags (x@(TagPosition r c):y@(TagOpen _ _):tags) = do
-    modify (& lastOpenTagPosition .~ Just (r, c))
+    modify (& lastOpenTagPosition .~ (r, c))
     safeTags (y:tags)
 safeTags (t:tags) = do
     inUnsafe <- (not . null . _unsanitaryTagStack) <$> get
