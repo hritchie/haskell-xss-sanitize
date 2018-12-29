@@ -30,6 +30,10 @@ line 123 col 9 <script>: content in script tag:
 
 ```
 
+## Resource
+
+* https://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_Prevention_Cheat_Sheet
+
 
 ## Old readme
 
