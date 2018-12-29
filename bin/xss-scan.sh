@@ -21,7 +21,7 @@ echo 'select id from notes where deleted_at is null order by id asc' |
     # Report note_id if not clean.
     echo "select body from notes where id = $note_id" |
       mys -ss $MYSQL_DATABASE |
-      (xss ${@:-filter -q} || echo $note_id)
+      (xss ${@:-flag -q} || echo $note_id)
     
     # TODO some note bodies need escaping, report "argument list too long"
     # echo "=========================="

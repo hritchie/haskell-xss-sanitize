@@ -32,7 +32,6 @@ options =
         (
            command "pubsub" (info (helper <*> pure PubSub)
                 (progDesc "Subscribe to event channels and filter note and comment bodies (default mode)"))
-        <> command "filter" (info (helper <*> filterSubcommand)
                 (progDesc "Print out problematic tags/attributes for HTML text on stdin"))
         <> command "flag" (info (helper <*> filterSubcommand)
                 (progDesc "Print out problematic tags/attributes for HTML text on stdin"))
