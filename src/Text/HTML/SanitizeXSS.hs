@@ -224,11 +224,11 @@ safeURISchemes :: Set String
 safeURISchemes = fromList acceptable_protocols
 
 sanitaryTags :: Set Text
-sanitaryTags = fromList (acceptable_elements ++ mathml_elements ++ svg_elements)
+sanitaryTags = fromList (acceptable_elements ++ mathml_elements ++ svg_elements ++ mso_elements)
   \\ (fromList svg_allow_local_href) -- extra filtering not implemented
 
 sanitaryAttributes :: Set Text
-sanitaryAttributes = fromList (allowed_html_uri_attributes ++ acceptable_attributes ++ mathml_attributes ++ svg_attributes)
+sanitaryAttributes = fromList (allowed_html_uri_attributes ++ acceptable_attributes ++ mathml_attributes ++ svg_attributes ++ mso_attributes)
   \\ (fromList svg_attr_val_allows_ref) -- extra unescaping not implemented
 
 allowed_html_uri_attributes :: [Text]
@@ -257,6 +257,10 @@ acceptable_elements = ["a", "abbr", "acronym", "address", "area",
     "u", "ul", "var", "video"
     -- MACKEY
     , "style", "head", "body", "html"]
+
+mso_elements :: [Text]
+mso_elements = ["o:p"]
+
 
 mathml_elements :: [Text]
 mathml_elements = ["maction", "math", "merror", "mfrac", "mi",
@@ -303,6 +307,10 @@ acceptable_attributes = ["abbr", "accept", "accept-charset", "accesskey",
     "template", "title", "toppadding", "type", "unselectable", "usemap",
     "urn", "valign", "value", "variable", "volume", "vspace", "vrml",
     "width", "wrap", "xml:lang"]
+
+mso_attributes :: [Text]
+mso_attributes = ["msolist", "mso-fareast-langauge"]
+  
 
 acceptable_protocols :: [String]
 acceptable_protocols = [ "ed2k", "ftp", "http", "https", "irc",
