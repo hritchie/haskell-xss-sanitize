@@ -128,23 +128,23 @@ safeTags (t@(TagClose name):tags)
           -- TODO this assumes balanced tags?
           ts <- _unsanitaryTagStack <$> get
           pos <- _lastOpenTagPosition <$> get
-          modify (& unsanitaryTagStack %~ drop 1) 
+          modify (over unsanitaryTagStack (drop 1))
           let s = renderTags . reverse $ (t:ts)
           tell [XssFlag $ "unsafe tag: " <> s <> " at " <> (T.pack . show $ pos)]
           safeTags tags
 safeTags (x@(TagOpen name attributes):tags)
   | safeTagName name = do
-        modify (& lastOpenTag .~ x) 
+        modify (set lastOpenTag x) 
         as <- mapM sanitizeAttribute attributes
         let t = TagOpen name (catMaybes as)
         (t :) <$> safeTags tags
   | otherwise = do
         -- tell [XssFlag $ "open unsafe tag: " <> name]
-        modify (& unsanitaryTagStack .~ [x])
-        modify (& lastOpenTag .~ x) 
+        modify (set unsanitaryTagStack [x])
+        modify (set lastOpenTag x) 
         safeTags tags
 safeTags ((TagPosition r c):y@(TagOpen _ _):tags) = do
-    modify (& lastOpenTagPosition .~ (r, c))
+    modify (set lastOpenTagPosition (r, c))
     safeTags (y:tags)
 safeTags ((TagPosition _ _):tags) = do
     -- drop other positions so that RenderOptions optMinimize = True works
