@@ -166,8 +166,7 @@ safeTags (t@(TagText c):tags) = do
         -- content or just the beginning
         reportUnsafe $ "content in script tag: " <> c
         safeTags tags
-      _ ->
-        (t:) <$> safeTags tags
+      _ -> (t:) <$> safeTags tags
 safeTags (t:tags) = 
     (t:) <$> safeTags tags
 
