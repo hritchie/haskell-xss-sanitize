@@ -32,6 +32,10 @@ main = do
     NoOp -> do
       input <- T.getContents
       T.putStrLn $ noOp input
+    Parse -> do
+      input <- T.getContents
+      mapM_ (putStrLn . show) $ parse input
+
     PubSub -> do
       waitForConnection
       pool <- getConnPool

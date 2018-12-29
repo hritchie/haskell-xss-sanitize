@@ -12,6 +12,7 @@ module Text.HTML.SanitizeXSS
     , getProblematicAttributes
     , flagXss -- newer version of above
     , noOp
+    , parse
 
     -- * Custom filtering
     , filterTags
@@ -67,6 +68,9 @@ flagXss input =
 
 noOp :: Text -> Text
 noOp = renderTags . canonicalizeTags . parseTags
+
+parse :: Text -> [Tag Text]
+parse = parseTags
 
 -- | Sanitize HTML to prevent XSS attacks.  This is equivalent to @filterTags safeTags@.
 sanitize :: Text -> Text

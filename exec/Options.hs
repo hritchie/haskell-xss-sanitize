@@ -8,6 +8,7 @@ data SubCommand =
         Sanitize
       | Filter Bool -- quickscan mode
       | NoOp -- just parse and render
+      | Parse -- output parse stream
       | PubSub 
       | QuickScan 
       deriving Read
@@ -23,8 +24,8 @@ options =
                 (progDesc "Print out problematic tags/attributes for HTML text on stdin"))
         <> command "sanitize" (info (helper <*> pure Sanitize) 
                 (progDesc "Filter and balance HTML text (on stdin), and output result"))
-        <> command "noop" (info (helper <*> pure NoOp) 
-                (progDesc "Just parse and render. For testing TagSoup"))
+        <> command "noop" (info (helper <*> pure NoOp) (progDesc "Just parse and render. For testing TagSoup."))
+        <> command "parse" (info (helper <*> pure Parse) (progDesc "Just parse. For testing TagSoup."))
         )
   in
     info
