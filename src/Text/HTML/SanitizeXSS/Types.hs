@@ -19,6 +19,7 @@ data XssFlag = XssFlag Text -- to develop
 data XssState = XssState {
     _unsanitaryTagStack :: [Tag Text] -- stack of open unsanitary tags
   , _lastOpenTagPosition :: (Int, Int) -- row, col
+  , _lastOpenTag :: Tag Text
   } deriving Show
 
 data XssConfig = XssConfig {

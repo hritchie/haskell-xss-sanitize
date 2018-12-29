@@ -55,7 +55,7 @@ getProblematicAttributes txt =
 
 
 initState :: XssState
-initState = XssState [] (0,0)
+initState = XssState [] (0,0) (TagText "")
 
 initConfig :: XssConfig
 initConfig = XssConfig (parseOptions{ optTagPosition = True })
@@ -123,14 +123,16 @@ safeTags (t@(TagClose name):tags)
           safeTags tags
 safeTags (x@(TagOpen name attributes):tags)
   | safeTagName name = do
+        modify (& lastOpenTag .~ x) 
         as <- mapM sanitizeAttribute attributes
         let t = TagOpen name (catMaybes as)
         (t :) <$> safeTags tags
   | otherwise = do
         -- tell [XssFlag $ "open unsafe tag: " <> name]
         modify (& unsanitaryTagStack %~ (x :))
+        modify (& lastOpenTag .~ x) 
         safeTags tags
-safeTags (x@(TagPosition r c):y@(TagOpen _ _):tags) = do
+safeTags ((TagPosition r c):y@(TagOpen _ _):tags) = do
     modify (& lastOpenTagPosition .~ (r, c))
     safeTags (y:tags)
 safeTags (t:tags) = do
@@ -156,7 +158,14 @@ sanitizeAttribute attr = do
     if safe 
     then pure (Just attr)
     else do
-        tell [XssFlag $ "Unsafe attribute: " <> (T.pack . show $ attr)]
+        s <- get
+        let pos = s ^. lastOpenTagPosition 
+        let tag = s ^. lastOpenTag
+        tell [XssFlag $ 
+                  "Unsafe attribute: " <> (T.pack . show $ attr)
+                  <> " of tag " <> (renderTags [tag])
+                  <> " at " <> (T.pack . show $ pos)
+                  ]
         pure Nothing
 
 safeAttribute :: (Text, Text) -> XssRWS Bool
