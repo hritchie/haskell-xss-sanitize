@@ -1,5 +1,4 @@
 module Text.HTML.SanitizeXSS.Types where
-import Control.Monad.Writer
 import Control.Monad.RWS.Lazy
 import           Data.Text                 (Text)
 import           Text.HTML.TagSoup
