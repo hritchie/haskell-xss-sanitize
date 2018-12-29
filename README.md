@@ -30,8 +30,9 @@ line 123 col 9 <script>: content in script tag:
 
 ```
 
-## Resource
+## Resources
 
+* https://github.com/mganss/HtmlSanitizer
 * https://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_Prevention_Cheat_Sheet
 
 
