@@ -1,6 +1,6 @@
-# MackeyRMS changes
+# MackeyRMS 
 
-This fork of this library does not sanitize `<script>` tags.
+This fork of this library does not sanitize `<style>` tags.
 
 Also, the executable has been renamed to 
 
