@@ -1,4 +1,11 @@
-# MackeyRMS 
+# DEPRECATED
+
+## See xss project
+
+(xss)[https://github.com/MackeyRMS/xss]
+
+Still used as a dependency of xss-json, but we'll switch to another mechanism 
+soon.
 
 This fork of this library does not sanitize `<style>` tags.
 
